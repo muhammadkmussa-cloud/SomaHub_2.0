@@ -1,64 +1,119 @@
-# SomaHub
+SomaHub Enterprise
 
-Multi-tenant library management and digital reading SaaS platform.
+Modern Library Management & Digital Reading Platform
 
-## Quick start
+SomaHub is a multi-tenant library management and digital reading system designed for schools, colleges, universities, and educational institutions. It combines physical inventory management, OCR-assisted cataloging, digital bookstore, secure ebook reading, analytics, and subscription management — all in one platform.
+🚀 Features
 
-```bash
-# Start PostgreSQL, Redis, backend, and frontend
-docker compose up
+    Authentication: JWT-based login, refresh tokens, password reset, RBAC.
 
-# Or run locally
-make dev-db          # postgres + redis only
-make migrate         # run Alembic migrations
-make dev-backend     # FastAPI on :8000
-make dev-frontend    # Vite on :5173
-```
+    Tenant Management: Super Admin controls for libraries, subscriptions, and platform analytics.
 
-- **API:** http://localhost:8000/api/v1  
-- **API docs (dev):** http://localhost:8000/docs  
-- **Frontend:** http://localhost:5173  
+    User Management: Roles include Super Admin, Library Admin, Librarian, and Reader.
 
-## Project structure
+    Books & Catalog: Manual entry, ISBN scanning, OCR-assisted cataloging, copy tracking.
 
-```
-backend/     FastAPI API (multi-tenant, RBAC, payments)
-frontend/    React + Vite dashboard
-docs/        Architecture, API, and security guides
-```
+    Borrowers: Registration, student ID scanning, borrower history, suspension.
 
-## Environment
+    Loans: Issue, return, overdue tracking, fines.
 
-Copy environment files and set secrets:
+    Digital Bookstore: Browse, purchase, and review ebooks.
 
-```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-```
+    Reader Module: In-platform ebook reader with progress tracking, bookmarks, favorites.
 
-Generate a secret key:
+    Payments: Stripe & Paystack integration, checkout sessions, webhooks.
 
-```bash
-python3 -c "import secrets; print(secrets.token_urlsafe(64))"
-```
+    Notifications: Email, SMS (future), push notifications.
 
-## Tests
+    Analytics: Borrowing trends, revenue, tenant growth, marketplace sales.
 
-```bash
-make test              # backend pytest
-cd backend && uv run pytest tests/ --cov=app
-cd frontend && npm run test
-cd frontend && npm run test:e2e
-```
+    OCR: Student ID, ISBN, and book cover scanning.
 
-## Documentation
+🛠️ Tech Stack
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [API overview](docs/API.md)
-- [Security checklist](docs/SECURITY.md)
-- [Backend setup](backend/README.md)
-- [Frontend setup](frontend/README.md)
+    Frontend: React 19, TypeScript, Tailwind CSS, TanStack Query, React Router
 
-## License
+    Backend: FastAPI, SQLAlchemy 2.0, Alembic, Redis, Pydantic Settings
 
-Proprietary — SomaHub Enterprise.
+    Database: PostgreSQL (Neon), Row Level Security (RLS)
+
+    Storage: Supabase Storage (ebooks, covers, OCR uploads, avatars)
+
+    Infrastructure: Docker, Google Cloud Run, GitHub Actions, Cloud Build, Artifact Registry
+
+    Security: JWT, Argon2, RBAC, RLS, Audit Logging
+
+📂 Project Structure
+Code
+
+backend/
+  app/
+    core/
+    modules/
+    infrastructure/
+    workers/
+    tests/
+frontend/
+  src/
+    components/
+    pages/
+    hooks/
+    utils/
+
+⚙️ Installation
+bash
+
+# Clone the repository
+git clone https://github.com/muhammadkmussa-cloud/SomaHub-1.git
+cd SomaHub-1
+
+# Backend setup
+cd backend
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+
+# Frontend setup
+cd frontend
+npm install
+npm run dev
+
+📖 Usage
+
+    Super Admin: Manage tenants, subscriptions, marketplace, analytics.
+
+    Library Admin: Manage librarians, borrowers, books, fines, analytics.
+
+    Librarian: Catalog books, issue/return loans, collect fines.
+
+    Reader: Purchase ebooks, read in-platform, track progress, leave reviews.
+
+📊 Roadmap
+
+    Mobile apps (iOS/Android)
+
+    Offline reading
+
+    AI-powered recommendations
+
+    Institution federation
+
+    Advanced analytics
+
+    Multi-language support
+
+🤝 Contributing
+
+    Fork the repo
+
+    Create a feature branch (git checkout -b feature-name)
+
+    Commit changes (git commit -m "Add feature")
+
+    Push to branch (git push origin feature-name)
+
+    Open a Pull Request
+
+📜 License
+
+MIT License. See LICENSE file for details.
