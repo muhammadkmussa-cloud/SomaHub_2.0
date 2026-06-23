@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Custom Properties (Design Tokens) ────────────────────────────────── */
+:root {
+  /* Primary — Royal Emerald */
+  --color-primary:       #059669;
+  --color-primary-light: #10b981;
+  --color-primary-dark:  #047857;
+  --color-primary-bg:    #ecfdf5;
+
+  /* Secondary — Sapphire Blue */
+  --color-secondary:     #2563eb;
+  --color-secondary-bg:  #eff6ff;
+
+  /* Neutral — Obsidian */
+  --color-text:          #0f172a;
+  --color-text-muted:    #475569;
+  --color-text-faint:    #94a3b8;
+  --color-bg:            #f8fafc;
+  --color-surface:       #ffffff;
+  --color-border:        #e2e8f0;
+
+  /* Status */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error:   #ef4444;
+  --color-info:    #3b82f6;
+
+  /* Sidebar */
+  --sidebar-width: 256px;
+  --sidebar-bg:    #0f172a;
+}
+
+/* ── Base Reset ───────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  @apply bg-obsidian-50 text-obsidian-900 font-sans;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-display font-semibold leading-tight;
+}
+
+/* ── Scrollbar Styling ────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-obsidian-100;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-obsidian-300 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-obsidian-400;
+}
+
+/* ── Focus Styles (Accessibility) ────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Selection ────────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--color-text);
+}
+
+/* ── Utility Classes ──────────────────────────────────────────────────────── */
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-white rounded-xl border border-obsidian-100 shadow-card;
+  }
+  .card-hover {
+    @apply card transition-shadow duration-200 hover:shadow-card-hover;
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    @apply bg-obsidian-100 rounded animate-shimmer;
+    background-image: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255,255,255,0.6) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-emerald { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-sapphire { @apply badge bg-sapphire-100 text-sapphire-700; }
+  .badge-warning  { @apply badge bg-amber-100 text-amber-700; }
+  .badge-danger   { @apply badge bg-red-100 text-red-700; }
+  .badge-neutral  { @apply badge bg-obsidian-100 text-obsidian-600; }
+
+  /* Page layout helpers */
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .page-section {
+    @apply py-16 sm:py-24;
+  }
+}
+
+/* ── Sidebar Layout ───────────────────────────────────────────────────────── */
+.layout-sidebar {
+  @apply fixed inset-y-0 left-0 z-40;
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+}
+
+.layout-main {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  @apply flex flex-col bg-obsidian-50;
+}
+
+@media (max-width: 1023px) {
+  .layout-main {
+    margin-left: 0;
+  }
+}
+
+/* ── Gradient backgrounds ─────────────────────────────────────────────────── */
+.hero-gradient {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 60%),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+.emerald-glow-text {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

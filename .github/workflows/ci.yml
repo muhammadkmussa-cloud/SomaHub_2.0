@@ -1,0 +1,194 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install uv
+        run: pip install uv
+      - name: Sync dependencies
+        run: uv sync --all-groups
+      - name: Ruff check
+        run: uv run ruff check app/
+      - name: Ruff format check
+        run: uv run ruff format --check app/
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: somahub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/somahub_test
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: ci-secret-key-not-for-production-12345678901234567890
+      APP_ENV: testing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install uv
+        run: pip install uv
+      - name: Sync dependencies
+        run: uv sync --all-groups
+      - name: Run migrations
+        run: uv run alembic upgrade head
+      - name: Run tests with coverage
+        run: uv run pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=72
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: backend/coverage.xml
+          fail_ci_if_error: false
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install uv
+        run: pip install uv
+      - name: Sync dependencies
+        run: uv sync --all-groups
+      - name: mypy check
+        run: uv run mypy app/ --ignore-missing-imports --no-strict-optional
+
+  frontend-lint:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: ESLint
+        run: npm run lint
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+
+  frontend-test:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Vitest
+        run: npm run test
+
+  frontend-e2e:
+    name: Frontend E2E
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install uv
+        run: pip install uv
+      - name: Sync backend dependencies
+        working-directory: backend
+        run: uv sync --all-groups
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+      - name: Run E2E tests
+        env:
+          CI: true
+          APP_ENV: testing
+          DATABASE_URL: sqlite+aiosqlite:///./e2e.db
+          SECRET_KEY: e2e-secret-key-not-for-production-12345678901234567890
+        run: npm run test:e2e
