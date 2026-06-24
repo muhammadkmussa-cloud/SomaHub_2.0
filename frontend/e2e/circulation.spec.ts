@@ -28,18 +28,25 @@ test.describe('Librarian circulation flow', () => {
     await page.getByRole('button', { name: 'Add copy' }).click();
 
     await page.goto('/dashboard/borrowers');
-    await page.getByLabel('First Name').fill('E2E');
+
+    const uniqueId = Date.now();
+    const borrowerName = `E2E${uniqueId} Borrower`;
+
+    await page.getByLabel('First Name').fill(`E2E${uniqueId}`);
     await page.getByLabel('Last Name').fill('Borrower');
-    await page.getByLabel('Student ID').fill(`STU-${Date.now()}`);
+    await page.getByLabel('Student ID').fill(`STU-${uniqueId}`);
     await page.getByRole('button', { name: 'Register' }).click();
-    await expect(page.getByRole('cell', { name: 'E2E Borrower' })).toBeVisible({ timeout: 15_000 });
+
+    await expect(
+      page.getByRole('cell', { name: borrowerName })
+    ).toBeVisible({ timeout: 15_000 });
 
     await page.goto('/dashboard/loans');
-    await page.getByLabel('Borrower').selectOption({ label: 'E2E Borrower' });
+    await page.getByLabel('Borrower').selectOption({ label: borrowerName });
     await page.getByLabel('Available Copy').selectOption({ label: barcode });
     await page.getByRole('button', { name: 'Issue' }).click();
 
-    await expect(page.getByRole('cell', { name: 'E2E Borrower' })).toBeVisible();
-    await expect(page.getByText('issued')).toBeVisible();
+    await expect(page.getByRole('cell', { name: borrowerName })).toBeVisible();
+    await expect(page.getByText('issued').first()).toBeVisible();
   });
 });
