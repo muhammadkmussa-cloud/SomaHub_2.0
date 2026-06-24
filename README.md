@@ -101,14 +101,24 @@ This will automatically download all dependencies and start the services:
 If you prefer to run the apps directly on your host machine without Docker:
 
 **Backend Setup:**
+You can use `uv` (recommended) or standard `pip`:
+
+Using **uv**:
 ```bash
 cd backend
-# uv will automatically create a virtual environment and sync dependencies based on uv.lock
 uv sync
-# Run database migrations
 uv run alembic upgrade head
-# Start the FastAPI server
 uv run uvicorn app.main:app --reload
+```
+
+Using standard **pip**:
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
 ```
 
 **Frontend Setup:**
