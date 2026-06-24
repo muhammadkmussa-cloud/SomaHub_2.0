@@ -1,7 +1,6 @@
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 from fastapi import HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.auth.models import Tenant

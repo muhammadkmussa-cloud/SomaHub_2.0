@@ -15,7 +15,6 @@ from app.core.exceptions import (
     AlreadyExistsError,
     AuthenticationError,
     InvalidTokenError,
-    NotFoundError,
 )
 from app.core.redis import (
     delete_refresh_token,

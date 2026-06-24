@@ -3,7 +3,6 @@ Reviews API tests.
 """
 
 import pytest
-from uuid import uuid4
 
 
 @pytest.mark.asyncio

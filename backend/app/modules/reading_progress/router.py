@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter
 
 from app.core.dependencies import CurrentUser, DBSession
 from app.modules.reading_progress.schemas import ReadingProgressCreate, ReadingProgressResponse

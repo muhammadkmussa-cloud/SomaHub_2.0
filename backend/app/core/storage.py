@@ -3,10 +3,8 @@ File storage abstraction layer.
 Supports 'local', 'supabase', and 's3' storage backends.
 """
 
-import os
 import uuid
 from pathlib import Path
-from typing import BinaryIO
 
 from fastapi import UploadFile
 

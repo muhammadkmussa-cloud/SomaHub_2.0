@@ -1,0 +1,33 @@
+# Stage 1: Build the React application
+FROM node:20-alpine as build
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy the rest of the application code
+COPY . .
+
+# Pass in any build-time variables (like API URL)
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
+# Build the app for production
+RUN npm run build
+
+# Stage 2: Serve the app using Nginx
+FROM nginx:alpine
+
+# Copy the built assets from the build stage to Nginx's default public directory
+# (Vite's default build output directory is 'dist')
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Optional: Add a custom Nginx configuration if you need client-side routing (React Router)
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

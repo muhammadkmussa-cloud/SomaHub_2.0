@@ -1,7 +1,5 @@
-import json
 from uuid import UUID
 
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.payments.models import Payment

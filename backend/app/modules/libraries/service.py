@@ -1,11 +1,10 @@
 from uuid import UUID
 
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.libraries.models import Library
 from app.modules.libraries.repository import LibraryRepository
-from app.modules.libraries.schemas import LibraryCreate, LibraryUpdate
+from app.modules.libraries.schemas import LibraryUpdate
 
 
 class LibraryService:

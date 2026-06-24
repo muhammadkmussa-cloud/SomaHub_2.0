@@ -3,12 +3,10 @@ Test configuration — async fixtures for FastAPI + SQLAlchemy tests.
 Uses aiosqlite for isolated test database.
 """
 
-import asyncio
 from typing import AsyncGenerator
 from uuid import uuid4
 
 import httpx
-import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -19,26 +17,12 @@ from sqlalchemy.pool import StaticPool
 
 # Import ALL models so they register on Base.metadata for table creation
 from app.core.database import Base, get_db
-from app.core.dependencies import get_current_user
 from app.core.security import create_access_token, hash_password
 from app.main import app as _app
 
 # Model imports — ensures all tables are known to Base.metadata
 from app.modules.auth.models import Tenant, User
-from app.modules.books.models import Book, BookCopy
-from app.modules.borrowers.models import Borrower
-from app.modules.loans.models import Loan
-from app.modules.fines.models import Fine
 from app.modules.ebooks.models import Ebook
-from app.modules.ebook_purchases.models import EbookPurchase
-from app.modules.notifications.models import Notification
-from app.modules.payments.models import Payment
-from app.modules.subscriptions.models import Subscription
-from app.modules.reading_progress.models import ReadingProgress
-from app.modules.bookmarks.models import Bookmark
-from app.modules.favorites.models import Favorite
-from app.modules.reviews.models import Review
-from app.modules.libraries.models import Library
 
 # ── Test engine ───────────────────────────────────────────────────────────────
 

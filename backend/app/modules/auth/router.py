@@ -110,7 +110,6 @@ async def refresh_tokens(
     """
     Issue a new access token using the refresh token from the HTTP-only cookie.
     """
-    from fastapi import Request
 
     service = AuthService(session)
     token_response, new_refresh = await service.refresh_tokens(refresh_token or "")

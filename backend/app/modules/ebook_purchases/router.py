@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 
 from app.core.dependencies import CurrentUser, DBSession
 from app.modules.ebook_purchases.schemas import EbookPurchaseCreate, EbookPurchaseResponse

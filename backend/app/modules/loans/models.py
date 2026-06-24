@@ -1,12 +1,18 @@
 import uuid
 from datetime import date, datetime, timezone
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import Date, DateTime, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+if TYPE_CHECKING:
+    from app.modules.borrowers.models import Borrower
+    from app.modules.books.models import BookCopy
+    from app.modules.fines.models import Fine
 
 
 def utcnow() -> datetime:

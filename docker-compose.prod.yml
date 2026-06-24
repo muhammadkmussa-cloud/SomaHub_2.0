@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: somahub_postgres_prod
+    restart: always
+    # Use environment files for production secrets
+    env_file:
+      - .env.prod
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    # In production, you typically DO NOT expose the database port directly to the host
+    # unless you have a strict firewall or need remote management.
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: somahub_redis_prod
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-someredispassword}
+    volumes:
+      - redis_data_prod:/data
+    # ports:
+    #   - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-someredispassword}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (FastAPI) ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: somahub_backend_prod
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+    # DO NOT mount local volumes in production so source code isn't modified live
+    # Exposing the backend port allows the frontend/Nginx to talk to it or a reverse proxy.
+    ports:
+      - "8000:8000"
+
+  # ── Frontend (Vite + Nginx) ──────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        # Pass the public URL where your backend API will be accessible from the user's browser
+        - VITE_API_URL=${PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    container_name: somahub_frontend_prod
+    restart: always
+    depends_on:
+      - backend
+    # Port 80 exposed on host port 80 (or put behind another reverse proxy like Traefik)
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+
+networks:
+  default:
+    name: somahub_network_prod
