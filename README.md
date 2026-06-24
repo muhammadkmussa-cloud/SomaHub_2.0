@@ -60,23 +60,72 @@ frontend/
     hooks/
     utils/
 
-⚙️ Installation
-bash
+⚙️ Getting Started (Local Development)
 
-# Clone the repository
-git clone https://github.com/muhammadkmussa-cloud/SomaHub-1.git
-cd SomaHub-1
+SomaHub uses Docker and Docker Compose to spin up the entire stack (PostgreSQL, Redis, Backend, and Frontend) with hot-reloading for easy development.
 
-# Backend setup
+### Prerequisites
+Make sure you have installed:
+- [Docker & Docker Compose](https://docs.docker.com/get-docker/)
+- [uv](https://github.com/astral-sh/uv) (Extremely fast Python package manager - used inside the backend)
+- [Node.js](https://nodejs.org/) (v20+ recommended)
+
+### 1. Environment Setup
+Create the required environment files for the frontend and backend.
+
+```bash
+# In the backend directory
 cd backend
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
+cp .env.example .env
 
-# Frontend setup
+# In the frontend directory
+cd ../frontend
+cp .env.example .env
+```
+*(Note: You do not need to change the values in `.env` for basic local development, as they are pre-configured to work with the Docker setup).*
+
+### 2. Running the Application via Docker (Recommended)
+From the root of the repository, simply run:
+
+```bash
+docker-compose up --build
+```
+This will automatically download all dependencies and start the services:
+- **Frontend:** Available at `http://localhost:5173`
+- **Backend API:** Available at `http://localhost:8000`
+- **PostgreSQL:** Running on port `5432`
+- **Redis:** Running on port `6379`
+
+### 3. Alternative: Running Manually (Without Docker)
+
+If you prefer to run the apps directly on your host machine without Docker:
+
+**Backend Setup:**
+```bash
+cd backend
+# uv will automatically create a virtual environment and sync dependencies based on uv.lock
+uv sync
+# Run database migrations
+uv run alembic upgrade head
+# Start the FastAPI server
+uv run uvicorn app.main:app --reload
+```
+
+**Frontend Setup:**
+```bash
 cd frontend
+# Install Node modules
 npm install
+# Start the Vite development server
 npm run dev
+```
+
+## 🚀 Production Deployment
+To run this application in a production environment (optimized builds, no hot-reloading, secure secrets), refer to the `.env.prod.example` and run:
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
 
 📖 Usage
 
