@@ -16,7 +16,9 @@ async def test_create_borrower(async_client, librarian_headers):
         "phone": "+254700000000",
         "student_id": "STU-001",
     }
-    response = await async_client.post("/api/v1/borrowers", json=payload, headers=librarian_headers)
+    response = await async_client.post(
+        "/api/v1/borrowers", json=payload, headers=librarian_headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["first_name"] == "John"
@@ -29,7 +31,9 @@ async def test_create_borrower(async_client, librarian_headers):
 async def test_create_borrower_unauthorized(async_client, auth_headers):
     """POST /api/v1/borrowers → 403 for readers."""
     payload = {"first_name": "Test", "last_name": "User"}
-    response = await async_client.post("/api/v1/borrowers", json=payload, headers=auth_headers)
+    response = await async_client.post(
+        "/api/v1/borrowers", json=payload, headers=auth_headers
+    )
     assert response.status_code == 403
 
 
@@ -60,7 +64,9 @@ async def test_get_borrower(async_client, librarian_headers):
     )
     borrower_id = created.json()["id"]
 
-    response = await async_client.get(f"/api/v1/borrowers/{borrower_id}", headers=librarian_headers)
+    response = await async_client.get(
+        f"/api/v1/borrowers/{borrower_id}", headers=librarian_headers
+    )
     assert response.status_code == 200
     assert response.json()["first_name"] == "Alice"
 
@@ -68,12 +74,16 @@ async def test_get_borrower(async_client, librarian_headers):
 @pytest.mark.asyncio
 async def test_get_borrower_not_found(async_client, librarian_headers):
     """GET /api/v1/borrowers/{id} → 404."""
-    response = await async_client.get(f"/api/v1/borrowers/{uuid4()}", headers=librarian_headers)
+    response = await async_client.get(
+        f"/api/v1/borrowers/{uuid4()}", headers=librarian_headers
+    )
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_suspend_borrower(async_client, librarian_headers, admin_headers, test_library_admin):
+async def test_suspend_borrower(
+    async_client, librarian_headers, admin_headers, test_library_admin
+):
     """POST /api/v1/borrowers/{id}/suspend → suspended status."""
     created = await async_client.post(
         "/api/v1/borrowers",

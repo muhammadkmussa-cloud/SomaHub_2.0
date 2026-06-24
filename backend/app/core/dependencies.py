@@ -126,7 +126,9 @@ async def require_active_subscription(
         if ends_at and ends_at.tzinfo is None:
             ends_at = ends_at.replace(tzinfo=timezone.utc)
         if ends_at and ends_at <= now:
-            raise SubscriptionRequiredError("Subscription has expired. Please renew to continue.")
+            raise SubscriptionRequiredError(
+                "Subscription has expired. Please renew to continue."
+            )
         return
 
     raise SubscriptionRequiredError(

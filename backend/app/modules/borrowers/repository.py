@@ -11,7 +11,9 @@ class BorrowerRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get(self, borrower_id: UUID, tenant_id: UUID | None = None) -> Optional[Borrower]:
+    async def get(
+        self, borrower_id: UUID, tenant_id: UUID | None = None
+    ) -> Optional[Borrower]:
         stmt = select(Borrower).where(Borrower.id == borrower_id)
         if tenant_id:
             stmt = stmt.where(Borrower.tenant_id == tenant_id)
@@ -41,7 +43,9 @@ class BorrowerRepository:
             )
         if status:
             stmt = stmt.where(Borrower.status == status)
-        result = await self.session.execute(stmt.order_by(Borrower.created_at.desc()).offset(offset).limit(limit))
+        result = await self.session.execute(
+            stmt.order_by(Borrower.created_at.desc()).offset(offset).limit(limit)
+        )
         return list(result.scalars().all())
 
     async def create(self, tenant_id: UUID, **data) -> Borrower:

@@ -27,7 +27,11 @@ async def list_notifications(
     )
 
 
-@router.post("", response_model=NotificationResponse, dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))])
+@router.post(
+    "",
+    response_model=NotificationResponse,
+    dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))],
+)
 async def create_notification(data: NotificationCreate, db: DBSession = None):
     service = NotificationService(db)
     notification = await service.create_notification(data)
@@ -36,7 +40,9 @@ async def create_notification(data: NotificationCreate, db: DBSession = None):
 
 
 @router.post("/{notification_id}/read", response_model=NotificationResponse)
-async def mark_notification_read(notification_id: UUID, current_user: CurrentUser, db: DBSession = None):
+async def mark_notification_read(
+    notification_id: UUID, current_user: CurrentUser, db: DBSession = None
+):
     service = NotificationService(db)
     notification = await service.mark_read(notification_id, UUID(current_user.user_id))
     await db.commit()

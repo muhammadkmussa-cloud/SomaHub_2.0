@@ -12,7 +12,9 @@ class NotificationRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get(self, notification_id: UUID, user_id: UUID | None = None) -> Optional[Notification]:
+    async def get(
+        self, notification_id: UUID, user_id: UUID | None = None
+    ) -> Optional[Notification]:
         stmt = select(Notification).where(Notification.id == notification_id)
         if user_id:
             stmt = stmt.where(Notification.user_id == user_id)

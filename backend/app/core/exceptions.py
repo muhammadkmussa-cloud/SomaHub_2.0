@@ -33,7 +33,9 @@ class InvalidTokenError(SomaHubException):
 
 
 class PermissionDeniedError(SomaHubException):
-    def __init__(self, message: str = "You do not have permission to perform this action."):
+    def __init__(
+        self, message: str = "You do not have permission to perform this action."
+    ):
         super().__init__(message, status_code=status.HTTP_403_FORBIDDEN)
 
 
@@ -43,19 +45,25 @@ class RateLimitExceededError(SomaHubException):
 
 
 class SubscriptionRequiredError(SomaHubException):
-    def __init__(self, message: str = "An active subscription is required for this action."):
+    def __init__(
+        self, message: str = "An active subscription is required for this action."
+    ):
         super().__init__(message, status_code=status.HTTP_402_PAYMENT_REQUIRED)
 
 
 # ── Resource exceptions ───────────────────────────────────────────────────────
 class NotFoundError(SomaHubException):
     def __init__(self, resource: str = "Resource"):
-        super().__init__(f"{resource} not found.", status_code=status.HTTP_404_NOT_FOUND)
+        super().__init__(
+            f"{resource} not found.", status_code=status.HTTP_404_NOT_FOUND
+        )
 
 
 class AlreadyExistsError(SomaHubException):
     def __init__(self, resource: str = "Resource"):
-        super().__init__(f"{resource} already exists.", status_code=status.HTTP_409_CONFLICT)
+        super().__init__(
+            f"{resource} already exists.", status_code=status.HTTP_409_CONFLICT
+        )
 
 
 class ValidationError(SomaHubException):
@@ -71,18 +79,25 @@ class TenantNotFoundError(SomaHubException):
 
 class TenantSuspendedError(SomaHubException):
     def __init__(self):
-        super().__init__("This library account has been suspended.", status_code=status.HTTP_403_FORBIDDEN)
+        super().__init__(
+            "This library account has been suspended.",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
 
 
 # ── Business rule exceptions ──────────────────────────────────────────────────
 class InsufficientCopiesError(SomaHubException):
     def __init__(self):
-        super().__init__("No copies available to issue.", status_code=status.HTTP_409_CONFLICT)
+        super().__init__(
+            "No copies available to issue.", status_code=status.HTTP_409_CONFLICT
+        )
 
 
 class BorrowerSuspendedError(SomaHubException):
     def __init__(self):
-        super().__init__("Borrower account is suspended.", status_code=status.HTTP_403_FORBIDDEN)
+        super().__init__(
+            "Borrower account is suspended.", status_code=status.HTTP_403_FORBIDDEN
+        )
 
 
 # ── Handler registration ──────────────────────────────────────────────────────
@@ -90,7 +105,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Register all custom exception handlers with the FastAPI app."""
 
     @app.exception_handler(SomaHubException)
-    async def somahub_exception_handler(request: Request, exc: SomaHubException) -> JSONResponse:
+    async def somahub_exception_handler(
+        request: Request, exc: SomaHubException
+    ) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
             content={
@@ -112,7 +129,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(405)
-    async def method_not_allowed_handler(request: Request, exc: Exception) -> JSONResponse:
+    async def method_not_allowed_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
         return JSONResponse(
             status_code=405,
             content={

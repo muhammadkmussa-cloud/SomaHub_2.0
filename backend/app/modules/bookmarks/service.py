@@ -20,12 +20,13 @@ class BookmarkService:
         owned = await self.purchase_repo.get_purchase(user_id, ebook_id)
         if not owned:
             from app.modules.ebooks.repository import EbookRepository
+
             ebook_repo = EbookRepository(self.repo.session)
             ebook = await ebook_repo.get(ebook_id)
             if not ebook or ebook.price > 0.0:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Cannot view bookmarks for an unowned ebook."
+                    detail="Cannot view bookmarks for an unowned ebook.",
                 )
 
         return await self.repo.list_for_ebook(user_id, ebook_id)
@@ -35,12 +36,13 @@ class BookmarkService:
         owned = await self.purchase_repo.get_purchase(user_id, data.ebook_id)
         if not owned:
             from app.modules.ebooks.repository import EbookRepository
+
             ebook_repo = EbookRepository(self.repo.session)
             ebook = await ebook_repo.get(data.ebook_id)
             if not ebook or ebook.price > 0.0:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Cannot bookmark an unowned ebook."
+                    detail="Cannot bookmark an unowned ebook.",
                 )
 
         return await self.repo.create(user_id, **data.model_dump())
@@ -49,12 +51,11 @@ class BookmarkService:
         bookmark = await self.repo.get(bookmark_id)
         if not bookmark:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Bookmark not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Bookmark not found"
             )
         if bookmark.user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot delete someone else's bookmark"
+                detail="Cannot delete someone else's bookmark",
             )
         await self.repo.delete(bookmark)

@@ -50,4 +50,9 @@ async def send_email(
         return
 
     # Fallback developer logging
-    logger.info("Email debug — to=%s subject=%s body=%s", to_email, subject, text_body or html_body)
+    logger.info(
+        "Email debug — to=%s subject=%s body=%s",
+        to_email,
+        subject,
+        text_body or html_body,
+    )

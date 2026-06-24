@@ -18,7 +18,9 @@ class BookService:
     async def get_book(self, book_id: UUID, tenant_id: UUID | None = None) -> Book:
         book = await self.repo.get(book_id, tenant_id)
         if not book:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Book not found"
+            )
         return book
 
     async def list_books(
@@ -36,7 +38,9 @@ class BookService:
         await enforce_book_limit(self.repo.session, tenant_id)
         return await self.repo.create(tenant_id, **data.model_dump())
 
-    async def update_book(self, book_id: UUID, tenant_id: UUID, data: BookUpdate) -> Book:
+    async def update_book(
+        self, book_id: UUID, tenant_id: UUID, data: BookUpdate
+    ) -> Book:
         book = await self.get_book(book_id, tenant_id)
         update_data = data.model_dump(exclude_unset=True)
         if "total_copies" in update_data:
@@ -51,7 +55,9 @@ class BookService:
     async def delete_book(self, book_id: UUID, tenant_id: UUID) -> None:
         book = await self.get_book(book_id, tenant_id)
         if await self.repo.count_active_loans(book.id):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Book has active loans")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Book has active loans"
+            )
         await self.repo.delete(book)
 
     async def create_copy(self, tenant_id: UUID, data: BookCopyCreate) -> BookCopy:

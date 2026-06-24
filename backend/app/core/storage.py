@@ -83,7 +83,12 @@ async def _upload_s3(file: UploadFile, folder: str, filename: str) -> str:
     client = session.client("s3", endpoint_url=settings.S3_ENDPOINT or None)
 
     content = await file.read()
-    client.put_object(Bucket=bucket, Key=key, Body=content, ContentType=file.content_type or "application/octet-stream")
+    client.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=content,
+        ContentType=file.content_type or "application/octet-stream",
+    )
 
     if settings.S3_ENDPOINT:
         return f"{settings.S3_ENDPOINT}/{bucket}/{key}"

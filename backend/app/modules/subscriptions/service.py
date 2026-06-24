@@ -34,15 +34,17 @@ class SubscriptionService:
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Tenant already has a subscription"
+                detail="Tenant already has a subscription",
             )
         return await self.repo.create(**data.model_dump())
 
-    async def update_subscription_status(self, tenant_id: UUID, plan: str, status_str: str, days: int = 30) -> Subscription:
+    async def update_subscription_status(
+        self, tenant_id: UUID, plan: str, status_str: str, days: int = 30
+    ) -> Subscription:
         sub = await self.repo.get_by_tenant(tenant_id)
         now = datetime.now(timezone.utc)
         ends = now + timedelta(days=days)
-        
+
         if not sub:
             return await self.repo.create(
                 tenant_id=tenant_id,
@@ -51,11 +53,7 @@ class SubscriptionService:
                 starts_at=now,
                 ends_at=ends,
             )
-        
+
         return await self.repo.update(
-            sub,
-            plan=plan,
-            status=status_str,
-            starts_at=now,
-            ends_at=ends
+            sub, plan=plan, status=status_str, starts_at=now, ends_at=ends
         )

@@ -4,7 +4,10 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.dependencies import CurrentUser, DBSession
-from app.modules.ebook_purchases.schemas import EbookPurchaseCreate, EbookPurchaseResponse
+from app.modules.ebook_purchases.schemas import (
+    EbookPurchaseCreate,
+    EbookPurchaseResponse,
+)
 from app.modules.ebook_purchases.service import EbookPurchaseService
 from app.modules.ebooks.service import EbookService
 
@@ -41,11 +44,11 @@ async def checkout_free_ebook(
 ):
     ebook_service = EbookService(db)
     ebook = await ebook_service.get_ebook(ebook_id)
-    
+
     if ebook.price > 0.0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot checkout priced ebook using checkout-free endpoint."
+            detail="Cannot checkout priced ebook using checkout-free endpoint.",
         )
 
     purchase_service = EbookPurchaseService(db)
@@ -54,6 +57,8 @@ async def checkout_free_ebook(
         amount=0.00,
         currency="USD",
     )
-    purchase = await purchase_service.register_purchase(UUID(current_user.user_id), purchase_data)
+    purchase = await purchase_service.register_purchase(
+        UUID(current_user.user_id), purchase_data
+    )
     await db.commit()
     return purchase

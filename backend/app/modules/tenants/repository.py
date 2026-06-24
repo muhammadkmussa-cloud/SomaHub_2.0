@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.auth.models import Tenant
 
+
 class TenantCRUDRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -28,11 +29,21 @@ class TenantCRUDRepository:
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> List[Tenant]:
         result = await self.session.execute(
-            select(Tenant).offset(offset).limit(limit).order_by(Tenant.created_at.desc())
+            select(Tenant)
+            .offset(offset)
+            .limit(limit)
+            .order_by(Tenant.created_at.desc())
         )
         return list(result.scalars().all())
 
-    async def create(self, name: str, slug: str, email: str, library_type: Optional[str] = None, location: Optional[str] = None) -> Tenant:
+    async def create(
+        self,
+        name: str,
+        slug: str,
+        email: str,
+        library_type: Optional[str] = None,
+        location: Optional[str] = None,
+    ) -> Tenant:
         tenant = Tenant(
             name=name,
             slug=slug.lower().strip(),

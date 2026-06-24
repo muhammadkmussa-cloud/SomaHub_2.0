@@ -18,16 +18,21 @@ class ReviewRepository:
 
     async def get_user_review(self, user_id: UUID, ebook_id: UUID) -> Optional[Review]:
         stmt = select(Review).where(
-            Review.user_id == user_id,
-            Review.ebook_id == ebook_id
+            Review.user_id == user_id, Review.ebook_id == ebook_id
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_for_ebook(self, ebook_id: UUID, limit: int = 50, offset: int = 0) -> List[Review]:
-        stmt = select(Review).where(
-            Review.ebook_id == ebook_id
-        ).order_by(Review.created_at.desc()).offset(offset).limit(limit)
+    async def list_for_ebook(
+        self, ebook_id: UUID, limit: int = 50, offset: int = 0
+    ) -> List[Review]:
+        stmt = (
+            select(Review)
+            .where(Review.ebook_id == ebook_id)
+            .order_by(Review.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

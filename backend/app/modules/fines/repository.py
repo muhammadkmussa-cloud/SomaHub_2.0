@@ -35,7 +35,9 @@ class FineRepository:
             stmt = stmt.where(Fine.status == status)
         if borrower_id:
             stmt = stmt.where(Fine.borrower_id == borrower_id)
-        result = await self.session.execute(stmt.order_by(Fine.created_at.desc()).offset(offset).limit(limit))
+        result = await self.session.execute(
+            stmt.order_by(Fine.created_at.desc()).offset(offset).limit(limit)
+        )
         return list(result.scalars().all())
 
     async def create(self, tenant_id: UUID, **data) -> Fine:

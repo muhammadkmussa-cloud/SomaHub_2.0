@@ -14,7 +14,11 @@ from app.core.database import get_db
 from app.core.dependencies import CurrentUser, DBSession
 from app.core.permissions import UserRole, require_minimum_role
 from app.modules.payments.checkout import CheckoutService
-from app.modules.payments.schemas import CheckoutRequest, CheckoutResponse, PaymentResponse
+from app.modules.payments.schemas import (
+    CheckoutRequest,
+    CheckoutResponse,
+    PaymentResponse,
+)
 from app.modules.payments.service import PaymentService
 
 logger = logging.getLogger(__name__)
@@ -72,7 +76,9 @@ async def paystack_checkout(
     user_repo = UserRepository(db)
     user = await user_repo.get_by_id(UUID(current_user.user_id))
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     service = CheckoutService(db)
     tenant_id = UUID(current_user.tenant_id) if current_user.tenant_id else None
@@ -127,8 +133,12 @@ async def stripe_webhook(
     else:
         event = json.loads(payload.decode("utf-8"))
 
-    event_type = event.get("type") if isinstance(event, dict) else getattr(event, "type", None)
-    event_data = event.get("data", {}) if isinstance(event, dict) else getattr(event, "data", {})
+    event_type = (
+        event.get("type") if isinstance(event, dict) else getattr(event, "type", None)
+    )
+    event_data = (
+        event.get("data", {}) if isinstance(event, dict) else getattr(event, "data", {})
+    )
     obj = event_data.get("object", {})
 
     logger.info("Stripe webhook received: type=%s", event_type)
@@ -150,7 +160,9 @@ async def stripe_webhook(
     return {"status": "success"}
 
 
-@router.post("/webhook/paystack", status_code=status.HTTP_200_OK, include_in_schema=False)
+@router.post(
+    "/webhook/paystack", status_code=status.HTTP_200_OK, include_in_schema=False
+)
 async def paystack_webhook(
     request: Request,
     db: AsyncSession = Depends(get_db),

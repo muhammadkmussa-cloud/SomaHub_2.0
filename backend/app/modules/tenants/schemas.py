@@ -5,8 +5,12 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class TenantBase(BaseModel):
-    name: str = Field(..., max_length=255, description="Name of the library institution")
-    slug: str = Field(..., max_length=100, description="Unique URL friendly subdomain/slug")
+    name: str = Field(
+        ..., max_length=255, description="Name of the library institution"
+    )
+    slug: str = Field(
+        ..., max_length=100, description="Unique URL friendly subdomain/slug"
+    )
     email: EmailStr = Field(..., description="Institutional contact email")
     library_type: Optional[str] = Field(None, max_length=100)
     location: Optional[str] = Field(None, max_length=255)

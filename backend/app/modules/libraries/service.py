@@ -21,7 +21,11 @@ class LibraryService:
     async def update_profile(self, tenant_id: UUID, data: LibraryUpdate) -> Library:
         profile = await self.repo.get_by_tenant(tenant_id)
         if not profile:
-            profile = await self.repo.create(tenant_id=tenant_id, **data.model_dump(exclude_none=True))
+            profile = await self.repo.create(
+                tenant_id=tenant_id, **data.model_dump(exclude_none=True)
+            )
         else:
-            profile = await self.repo.update(profile, **data.model_dump(exclude_none=True))
+            profile = await self.repo.update(
+                profile, **data.model_dump(exclude_none=True)
+            )
         return profile

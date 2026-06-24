@@ -8,7 +8,9 @@ import pytest
 @pytest.mark.asyncio
 async def test_my_library_empty(async_client, auth_headers):
     """GET /api/v1/ebook-purchases/my-library → empty list."""
-    response = await async_client.get("/api/v1/ebook-purchases/my-library", headers=auth_headers)
+    response = await async_client.get(
+        "/api/v1/ebook-purchases/my-library", headers=auth_headers
+    )
     assert response.status_code == 200
 
 
@@ -17,7 +19,9 @@ async def test_check_ownership(async_client, auth_headers, test_free_ebook):
     """GET /api/v1/ebook-purchases/check/{ebook_id} → owned=false."""
     ebook_id = str(test_free_ebook.id)
 
-    response = await async_client.get(f"/api/v1/ebook-purchases/check/{ebook_id}", headers=auth_headers)
+    response = await async_client.get(
+        f"/api/v1/ebook-purchases/check/{ebook_id}", headers=auth_headers
+    )
     assert response.status_code == 200
     assert response.json()["owned"] is False
 

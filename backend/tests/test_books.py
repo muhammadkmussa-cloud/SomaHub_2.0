@@ -16,7 +16,9 @@ async def test_create_book(async_client, test_librarian, librarian_headers):
         "category": "Fiction",
         "total_copies": 3,
     }
-    response = await async_client.post("/api/v1/books", json=payload, headers=librarian_headers)
+    response = await async_client.post(
+        "/api/v1/books", json=payload, headers=librarian_headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "The Great Gatsby"
@@ -33,7 +35,9 @@ async def test_create_book_unauthorized(async_client, test_user, auth_headers):
         "author": "Test Author",
         "total_copies": 1,
     }
-    response = await async_client.post("/api/v1/books", json=payload, headers=auth_headers)
+    response = await async_client.post(
+        "/api/v1/books", json=payload, headers=auth_headers
+    )
     assert response.status_code == 403
 
 
@@ -55,10 +59,14 @@ async def test_list_books(async_client, test_librarian, librarian_headers):
 async def test_get_book(async_client, test_librarian, librarian_headers):
     """GET /api/v1/books/{id} → single book."""
     payload = {"title": "Brave New World", "author": "Aldous Huxley", "total_copies": 1}
-    created = await async_client.post("/api/v1/books", json=payload, headers=librarian_headers)
+    created = await async_client.post(
+        "/api/v1/books", json=payload, headers=librarian_headers
+    )
     book_id = created.json()["id"]
 
-    response = await async_client.get(f"/api/v1/books/{book_id}", headers=librarian_headers)
+    response = await async_client.get(
+        f"/api/v1/books/{book_id}", headers=librarian_headers
+    )
     assert response.status_code == 200
     assert response.json()["title"] == "Brave New World"
 
@@ -66,7 +74,9 @@ async def test_get_book(async_client, test_librarian, librarian_headers):
 @pytest.mark.asyncio
 async def test_get_book_not_found(async_client, librarian_headers):
     """GET /api/v1/books/{id} → 404 for non-existent book."""
-    response = await async_client.get(f"/api/v1/books/{uuid4()}", headers=librarian_headers)
+    response = await async_client.get(
+        f"/api/v1/books/{uuid4()}", headers=librarian_headers
+    )
     assert response.status_code == 404
 
 
@@ -74,7 +84,9 @@ async def test_get_book_not_found(async_client, librarian_headers):
 async def test_update_book(async_client, test_librarian, librarian_headers):
     """PATCH /api/v1/books/{id} → update book."""
     payload = {"title": "Original Title", "author": "Author", "total_copies": 1}
-    created = await async_client.post("/api/v1/books", json=payload, headers=librarian_headers)
+    created = await async_client.post(
+        "/api/v1/books", json=payload, headers=librarian_headers
+    )
     book_id = created.json()["id"]
 
     response = await async_client.patch(
@@ -87,13 +99,19 @@ async def test_update_book(async_client, test_librarian, librarian_headers):
 
 
 @pytest.mark.asyncio
-async def test_delete_book(async_client, test_librarian, test_library_admin, admin_headers, librarian_headers):
+async def test_delete_book(
+    async_client, test_librarian, test_library_admin, admin_headers, librarian_headers
+):
     """DELETE /api/v1/books/{id} → 204 for library admin."""
     payload = {"title": "To Delete", "author": "Author", "total_copies": 1}
-    created = await async_client.post("/api/v1/books", json=payload, headers=librarian_headers)
+    created = await async_client.post(
+        "/api/v1/books", json=payload, headers=librarian_headers
+    )
     book_id = created.json()["id"]
 
-    response = await async_client.delete(f"/api/v1/books/{book_id}", headers=admin_headers)
+    response = await async_client.delete(
+        f"/api/v1/books/{book_id}", headers=admin_headers
+    )
     assert response.status_code == 204
 
 
@@ -135,6 +153,8 @@ async def test_search_books(async_client, test_librarian, librarian_headers):
         headers=librarian_headers,
     )
 
-    response = await async_client.get("/api/v1/books?search=UniqueSearchTitle", headers=librarian_headers)
+    response = await async_client.get(
+        "/api/v1/books?search=UniqueSearchTitle", headers=librarian_headers
+    )
     assert response.status_code == 200
     assert any(b["title"] == "UniqueSearchTitle" for b in response.json())

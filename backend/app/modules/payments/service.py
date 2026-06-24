@@ -19,7 +19,9 @@ class PaymentService:
             return existing
         return await self.repo.create(**data.model_dump())
 
-    async def list_payments(self, tenant_id: UUID | None = None, limit: int = 100, offset: int = 0):
+    async def list_payments(
+        self, tenant_id: UUID | None = None, limit: int = 100, offset: int = 0
+    ):
         return await self.repo.list(tenant_id, limit, offset)
 
     async def get_payment_by_ref(self, reference: str) -> Payment | None:
@@ -33,7 +35,9 @@ class PaymentService:
         if not payment:
             # Create a payment record on the fly
             payment = await self.repo.create(
-                tenant_id=UUID(metadata["tenant_id"]) if "tenant_id" in metadata and metadata["tenant_id"] else None,
+                tenant_id=UUID(metadata["tenant_id"])
+                if "tenant_id" in metadata and metadata["tenant_id"]
+                else None,
                 provider=metadata.get("provider", "stripe"),
                 reference=reference,
                 amount=float(metadata.get("amount", 0)),
@@ -49,14 +53,15 @@ class PaymentService:
         # Fulfill depending on payment type
         if payment_type == "ebook_purchase":
             from app.modules.ebook_purchases.models import EbookPurchase
+
             user_id = UUID(metadata["user_id"])
             ebook_id = UUID(metadata["ebook_id"])
-            
+
             # Check if purchase already exists
             from sqlalchemy import select
+
             purchase_stmt = select(EbookPurchase).where(
-                EbookPurchase.user_id == user_id,
-                EbookPurchase.ebook_id == ebook_id
+                EbookPurchase.user_id == user_id, EbookPurchase.ebook_id == ebook_id
             )
             res = await self.session.execute(purchase_stmt)
             existing_purchase = res.scalar_one_or_none()
@@ -73,12 +78,14 @@ class PaymentService:
 
         elif payment_type == "fine":
             from app.modules.fines.models import Fine
+
             fine_id = UUID(metadata["fine_id"])
             fine_stmt = select(Fine).where(Fine.id == fine_id)
             res = await self.session.execute(fine_stmt)
             fine = res.scalar_one_or_none()
             if fine:
                 from datetime import datetime, timezone
+
                 fine.status = "paid"
                 fine.paid_amount = fine.amount
                 fine.paid_at = datetime.now(timezone.utc)
@@ -91,7 +98,7 @@ class PaymentService:
 
             tenant_id = UUID(metadata["tenant_id"])
             plan = metadata.get("plan", "starter")
-            
+
             # Update tenant plan
             tenant_stmt = select(Tenant).where(Tenant.id == tenant_id)
             res = await self.session.execute(tenant_stmt)

@@ -13,10 +13,14 @@ class BorrowerService:
     def __init__(self, session: AsyncSession):
         self.repo = BorrowerRepository(session)
 
-    async def get_borrower(self, borrower_id: UUID, tenant_id: UUID | None = None) -> Borrower:
+    async def get_borrower(
+        self, borrower_id: UUID, tenant_id: UUID | None = None
+    ) -> Borrower:
         borrower = await self.repo.get(borrower_id, tenant_id)
         if not borrower:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Borrower not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Borrower not found"
+            )
         return borrower
 
     async def list_borrowers(
@@ -32,7 +36,9 @@ class BorrowerService:
     async def create_borrower(self, tenant_id: UUID, data: BorrowerCreate) -> Borrower:
         return await self.repo.create(tenant_id, **data.model_dump())
 
-    async def update_borrower(self, borrower_id: UUID, tenant_id: UUID, data: BorrowerUpdate) -> Borrower:
+    async def update_borrower(
+        self, borrower_id: UUID, tenant_id: UUID, data: BorrowerUpdate
+    ) -> Borrower:
         borrower = await self.get_borrower(borrower_id, tenant_id)
         return await self.repo.update(borrower, **data.model_dump(exclude_unset=True))
 

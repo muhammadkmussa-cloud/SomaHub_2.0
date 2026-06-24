@@ -4,18 +4,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.auth.models import User
 
+
 class UserCRUDRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, user_id: UUID, tenant_id: UUID | None = None) -> Optional[User]:
+    async def get_by_id(
+        self, user_id: UUID, tenant_id: UUID | None = None
+    ) -> Optional[User]:
         stmt = select(User).where(User.id == user_id)
         if tenant_id is not None:
             stmt = stmt.where(User.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_tenant_id(self, tenant_id: UUID, limit: int = 100, offset: int = 0) -> List[User]:
+    async def get_by_tenant_id(
+        self, tenant_id: UUID, limit: int = 100, offset: int = 0
+    ) -> List[User]:
         result = await self.session.execute(
             select(User)
             .where(User.tenant_id == tenant_id)

@@ -8,19 +8,29 @@ from app.core.permissions import UserRole, require_minimum_role
 from app.modules.loans.schemas import LoanCreate, LoanResponse
 from app.modules.loans.service import LoanService
 
-router = APIRouter(prefix="/loans", tags=["Loans"], dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))])
+router = APIRouter(
+    prefix="/loans",
+    tags=["Loans"],
+    dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))],
+)
 
 
 def tenant_scope(current_user: CurrentUser) -> UUID:
     if not current_user.tenant_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant access is required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Tenant access is required"
+        )
     return UUID(current_user.tenant_id)
 
 
-@router.post("", response_model=LoanResponse, dependencies=[Depends(require_tenant_write_access)])
+@router.post(
+    "", response_model=LoanResponse, dependencies=[Depends(require_tenant_write_access)]
+)
 async def issue_loan(data: LoanCreate, current_user: CurrentUser, db: DBSession = None):
     service = LoanService(db)
-    loan = await service.issue_loan(tenant_scope(current_user), UUID(current_user.user_id), data)
+    loan = await service.issue_loan(
+        tenant_scope(current_user), UUID(current_user.user_id), data
+    )
     await db.commit()
     return loan
 
@@ -35,7 +45,9 @@ async def list_loans(
     db: DBSession = None,
 ):
     service = LoanService(db)
-    loans = await service.list_loans(tenant_scope(current_user), status, borrower_id, limit, offset)
+    loans = await service.list_loans(
+        tenant_scope(current_user), status, borrower_id, limit, offset
+    )
     await db.commit()
     return loans
 
@@ -46,7 +58,11 @@ async def get_loan(loan_id: UUID, current_user: CurrentUser, db: DBSession = Non
     return await service.get_loan(loan_id, tenant_scope(current_user))
 
 
-@router.post("/{loan_id}/return", response_model=LoanResponse, dependencies=[Depends(require_tenant_write_access)])
+@router.post(
+    "/{loan_id}/return",
+    response_model=LoanResponse,
+    dependencies=[Depends(require_tenant_write_access)],
+)
 async def return_loan(loan_id: UUID, current_user: CurrentUser, db: DBSession = None):
     service = LoanService(db)
     loan = await service.return_loan(loan_id, tenant_scope(current_user))

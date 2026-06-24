@@ -40,7 +40,9 @@ async def test_remove_favorite(async_client, auth_headers, test_free_ebook):
     )
 
     # Remove
-    response = await async_client.delete(f"/api/v1/favorites/{ebook_id}", headers=auth_headers)
+    response = await async_client.delete(
+        f"/api/v1/favorites/{ebook_id}", headers=auth_headers
+    )
     assert response.status_code == 204
 
 

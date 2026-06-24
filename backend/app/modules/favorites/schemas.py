@@ -16,7 +16,7 @@ class FavoriteResponse(BaseModel):
     ebook_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
-    
+
     ebook: EbookResponse
 
     model_config = ConfigDict(from_attributes=True)

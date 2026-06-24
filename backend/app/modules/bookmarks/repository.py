@@ -17,10 +17,11 @@ class BookmarkRepository:
         return result.scalar_one_or_none()
 
     async def list_for_ebook(self, user_id: UUID, ebook_id: UUID) -> List[Bookmark]:
-        stmt = select(Bookmark).where(
-            Bookmark.user_id == user_id,
-            Bookmark.ebook_id == ebook_id
-        ).order_by(Bookmark.page.asc())
+        stmt = (
+            select(Bookmark)
+            .where(Bookmark.user_id == user_id, Bookmark.ebook_id == ebook_id)
+            .order_by(Bookmark.page.asc())
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

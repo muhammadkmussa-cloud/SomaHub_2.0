@@ -50,7 +50,9 @@ async def test_get_fine(async_client, librarian_headers):
     )
     fine_id = fine.json()["id"]
 
-    response = await async_client.get(f"/api/v1/fines/{fine_id}", headers=librarian_headers)
+    response = await async_client.get(
+        f"/api/v1/fines/{fine_id}", headers=librarian_headers
+    )
     assert response.status_code == 200
     assert response.json()["reason"] == "overdue"
 

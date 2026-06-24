@@ -10,12 +10,16 @@ async def test_list_reviews(async_client, auth_headers, test_free_ebook):
     """GET /api/v1/reviews/ebook/{ebook_id} → list."""
     ebook_id = str(test_free_ebook.id)
 
-    response = await async_client.get(f"/api/v1/reviews/ebook/{ebook_id}", headers=auth_headers)
+    response = await async_client.get(
+        f"/api/v1/reviews/ebook/{ebook_id}", headers=auth_headers
+    )
     assert response.status_code == 200
 
 
 @pytest.mark.asyncio
-async def test_add_review_free_ebook(async_client, auth_headers, test_user, test_free_ebook):
+async def test_add_review_free_ebook(
+    async_client, auth_headers, test_user, test_free_ebook
+):
     """POST /api/v1/reviews → 201 for free ebook (no purchase required)."""
     ebook_id = str(test_free_ebook.id)
 
@@ -63,5 +67,7 @@ async def test_delete_review(async_client, auth_headers, test_free_ebook):
     )
     review_id = review.json()["id"]
 
-    response = await async_client.delete(f"/api/v1/reviews/{review_id}", headers=auth_headers)
+    response = await async_client.delete(
+        f"/api/v1/reviews/{review_id}", headers=auth_headers
+    )
     assert response.status_code == 204

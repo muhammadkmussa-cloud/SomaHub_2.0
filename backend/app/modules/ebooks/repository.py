@@ -32,7 +32,7 @@ class EbookRepository:
         if search:
             value = f"%{search.strip()}%"
             stmt = stmt.where(or_(Ebook.title.ilike(value), Ebook.author.ilike(value)))
-        
+
         stmt = stmt.order_by(Ebook.created_at.desc()).offset(offset).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())

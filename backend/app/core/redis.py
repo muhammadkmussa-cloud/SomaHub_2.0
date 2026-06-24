@@ -83,6 +83,7 @@ async def init_redis() -> None:
     except Exception as exc:
         if settings.APP_ENV in ("development", "testing"):
             import logging
+
             logging.getLogger(__name__).warning(
                 "Redis is not reachable. Falling back to in-memory mock Redis."
             )
@@ -145,7 +146,9 @@ async def is_token_blacklisted(jti: str) -> bool:
 
 
 # ── Short token helpers (password reset, email verify) ───────────────────────
-async def store_short_token(purpose: str, user_id: str, token: str, ttl_seconds: int) -> None:
+async def store_short_token(
+    purpose: str, user_id: str, token: str, ttl_seconds: int
+) -> None:
     prefix = _RESET_PREFIX if purpose == "reset" else _VERIFY_PREFIX
     r = get_redis_client()
     await r.setex(f"{prefix}{user_id}", ttl_seconds, token)

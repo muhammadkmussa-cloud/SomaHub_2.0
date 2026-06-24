@@ -14,8 +14,7 @@ class ReadingProgressRepository:
 
     async def get(self, user_id: UUID, ebook_id: UUID) -> Optional[ReadingProgress]:
         stmt = select(ReadingProgress).where(
-            ReadingProgress.user_id == user_id,
-            ReadingProgress.ebook_id == ebook_id
+            ReadingProgress.user_id == user_id, ReadingProgress.ebook_id == ebook_id
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -42,7 +41,7 @@ class ReadingProgressRepository:
                 last_opened_at=now,
             )
             self.session.add(progress)
-            
+
         await self.session.flush()
         await self.session.refresh(progress)
         return progress

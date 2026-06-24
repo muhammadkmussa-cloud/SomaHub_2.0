@@ -7,7 +7,9 @@ from app.modules.notifications.models import Notification
 
 
 @pytest.mark.asyncio
-async def test_list_notifications_filters_by_tenant(async_client, test_user, auth_headers, db_session, test_tenant):
+async def test_list_notifications_filters_by_tenant(
+    async_client, test_user, auth_headers, db_session, test_tenant
+):
     """GET /api/v1/notifications returns only notifications for the user's tenant."""
     other_tenant_id = uuid4()
 

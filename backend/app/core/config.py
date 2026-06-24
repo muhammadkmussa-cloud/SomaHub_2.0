@@ -109,7 +109,9 @@ class Settings(BaseSettings):
             raise ValueError(f"Invalid APP_ENV: {self.APP_ENV}")
 
         if self.APP_ENV in ("staging", "production") and not self.SECRET_KEY:
-            raise ValueError("SECRET_KEY must be set when APP_ENV is staging or production.")
+            raise ValueError(
+                "SECRET_KEY must be set when APP_ENV is staging or production."
+            )
 
         if self.APP_ENV in ("development", "testing") and not self.SECRET_KEY:
             self.SECRET_KEY = "dev-insecure-secret-key-for-local-only-32chars"
@@ -119,9 +121,14 @@ class Settings(BaseSettings):
 
         if self.APP_ENV == "development":
             if not self.SECRET_KEY:
-                warnings.warn("SECRET_KEY is not set — using insecure development default.", stacklevel=2)
+                warnings.warn(
+                    "SECRET_KEY is not set — using insecure development default.",
+                    stacklevel=2,
+                )
             if not self.RESEND_API_KEY:
-                logger.warning("RESEND_API_KEY is not set — emails will print to console.")
+                logger.warning(
+                    "RESEND_API_KEY is not set — emails will print to console."
+                )
 
         return self
 

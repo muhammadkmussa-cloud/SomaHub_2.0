@@ -32,5 +32,7 @@ class NotificationService:
     async def mark_read(self, notification_id: UUID, user_id: UUID) -> Notification:
         notification = await self.repo.get(notification_id, user_id)
         if not notification:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found"
+            )
         return await self.repo.mark_read(notification)

@@ -15,12 +15,13 @@ class UserService:
         user = await self.repo.get_by_id(user_id)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
         return user
 
-    async def list_users(self, tenant_id: Optional[UUID] = None, limit: int = 100, offset: int = 0) -> List[User]:
+    async def list_users(
+        self, tenant_id: Optional[UUID] = None, limit: int = 100, offset: int = 0
+    ) -> List[User]:
         if tenant_id:
             return await self.repo.get_by_tenant_id(tenant_id, limit, offset)
         return await self.repo.get_all(limit, offset)

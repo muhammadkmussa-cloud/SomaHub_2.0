@@ -34,7 +34,9 @@ E2E_PASSWORD = "password123"
 
 async def seed() -> None:
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./e2e.db")
-    connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
+    connect_args = (
+        {"check_same_thread": False} if database_url.startswith("sqlite") else {}
+    )
     poolclass = StaticPool if database_url.startswith("sqlite") else None
 
     engine = create_async_engine(
@@ -42,7 +44,9 @@ async def seed() -> None:
         connect_args=connect_args,
         poolclass=poolclass,
     )
-    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    session_factory = async_sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

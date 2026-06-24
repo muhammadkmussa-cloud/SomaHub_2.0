@@ -23,7 +23,7 @@ class EbookPurchaseResponse(BaseModel):
     payment_id: Optional[uuid.UUID] = None
     created_at: datetime
     updated_at: datetime
-    
+
     ebook: Optional[EbookResponse] = None
 
     model_config = ConfigDict(from_attributes=True)

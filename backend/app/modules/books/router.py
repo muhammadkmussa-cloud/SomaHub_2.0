@@ -5,7 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.core.dependencies import CurrentUser, DBSession, require_tenant_write_access
 from app.core.permissions import UserRole, require_minimum_role
-from app.modules.books.schemas import BookCopyCreate, BookCopyResponse, BookCreate, BookResponse, BookUpdate
+from app.modules.books.schemas import (
+    BookCopyCreate,
+    BookCopyResponse,
+    BookCreate,
+    BookResponse,
+    BookUpdate,
+)
 from app.modules.books.service import BookService
 
 router = APIRouter(prefix="/books", tags=["Books"])
@@ -16,7 +22,9 @@ def tenant_scope(current_user: CurrentUser, write: bool = False) -> UUID | None:
     if current_user.role == UserRole.SUPER_ADMIN.value and not write:
         return None
     if not current_user.tenant_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant access is required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Tenant access is required"
+        )
     return UUID(current_user.tenant_id)
 
 
@@ -28,7 +36,9 @@ def tenant_scope(current_user: CurrentUser, write: bool = False) -> UUID | None:
         Depends(require_tenant_write_access),
     ],
 )
-async def create_book(data: BookCreate, current_user: CurrentUser, db: DBSession = None):
+async def create_book(
+    data: BookCreate, current_user: CurrentUser, db: DBSession = None
+):
     service = BookService(db)
     book = await service.create_book(tenant_scope(current_user, write=True), data)
     await db.commit()
@@ -46,7 +56,9 @@ async def list_books(
     db: DBSession = None,
 ):
     service = BookService(db)
-    return await service.list_books(tenant_scope(current_user), search, author, isbn, limit, offset)
+    return await service.list_books(
+        tenant_scope(current_user), search, author, isbn, limit, offset
+    )
 
 
 @router.get("/{book_id}", response_model=BookResponse)
@@ -63,9 +75,13 @@ async def get_book(book_id: UUID, current_user: CurrentUser, db: DBSession = Non
         Depends(require_tenant_write_access),
     ],
 )
-async def update_book(book_id: UUID, data: BookUpdate, current_user: CurrentUser, db: DBSession = None):
+async def update_book(
+    book_id: UUID, data: BookUpdate, current_user: CurrentUser, db: DBSession = None
+):
     service = BookService(db)
-    book = await service.update_book(book_id, tenant_scope(current_user, write=True), data)
+    book = await service.update_book(
+        book_id, tenant_scope(current_user, write=True), data
+    )
     await db.commit()
     return book
 
@@ -93,14 +109,20 @@ async def delete_book(book_id: UUID, current_user: CurrentUser, db: DBSession = 
         Depends(require_tenant_write_access),
     ],
 )
-async def create_copy(data: BookCopyCreate, current_user: CurrentUser, db: DBSession = None):
+async def create_copy(
+    data: BookCopyCreate, current_user: CurrentUser, db: DBSession = None
+):
     service = BookService(db)
     copy = await service.create_copy(tenant_scope(current_user, write=True), data)
     await db.commit()
     return copy
 
 
-@copy_router.get("", response_model=List[BookCopyResponse], dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))])
+@copy_router.get(
+    "",
+    response_model=List[BookCopyResponse],
+    dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))],
+)
 async def list_copies(
     current_user: CurrentUser,
     book_id: UUID | None = None,
@@ -110,4 +132,6 @@ async def list_copies(
     db: DBSession = None,
 ):
     service = BookService(db)
-    return await service.list_copies(tenant_scope(current_user), book_id, status, limit, offset)
+    return await service.list_copies(
+        tenant_scope(current_user), book_id, status, limit, offset
+    )

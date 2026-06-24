@@ -14,7 +14,7 @@ export function useAuthRefresh() {
         if (access_token) {
           setAccessToken(access_token);
         }
-      } catch (_err) {
+      } catch {
         clearAuth();
       }
     };

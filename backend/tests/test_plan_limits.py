@@ -12,16 +12,22 @@ from app.modules.ebooks.models import Ebook
 
 
 @pytest.mark.asyncio
-async def test_book_limit_enforced(async_client, test_librarian, librarian_headers, monkeypatch):
+async def test_book_limit_enforced(
+    async_client, test_librarian, librarian_headers, monkeypatch
+):
     """POST /api/v1/books → 402 when tenant exceeds plan book limit."""
     monkeypatch.setitem(subscription_module.PLAN_LIMITS["starter"], "max_books", 1)
 
     payload = {"title": "First Book", "author": "Author One", "total_copies": 1}
-    first = await async_client.post("/api/v1/books", json=payload, headers=librarian_headers)
+    first = await async_client.post(
+        "/api/v1/books", json=payload, headers=librarian_headers
+    )
     assert first.status_code == 200
 
     second_payload = {"title": "Second Book", "author": "Author Two", "total_copies": 1}
-    second = await async_client.post("/api/v1/books", json=second_payload, headers=librarian_headers)
+    second = await async_client.post(
+        "/api/v1/books", json=second_payload, headers=librarian_headers
+    )
     assert second.status_code == 402
     assert "Book limit reached" in second.json()["message"]
 

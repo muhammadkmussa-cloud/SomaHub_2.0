@@ -34,13 +34,19 @@ class LoanRepository:
             stmt = stmt.where(Loan.status == status)
         if borrower_id:
             stmt = stmt.where(Loan.borrower_id == borrower_id)
-        result = await self.session.execute(stmt.order_by(Loan.created_at.desc()).offset(offset).limit(limit))
+        result = await self.session.execute(
+            stmt.order_by(Loan.created_at.desc()).offset(offset).limit(limit)
+        )
         return list(result.scalars().all())
 
     async def mark_overdue(self, tenant_id: UUID) -> None:
         await self.session.execute(
             update(Loan)
-            .where(Loan.tenant_id == tenant_id, Loan.status == "issued", Loan.due_date < date.today())
+            .where(
+                Loan.tenant_id == tenant_id,
+                Loan.status == "issued",
+                Loan.due_date < date.today(),
+            )
             .values(status="overdue", updated_at=datetime.now(timezone.utc))
         )
         await self.session.flush()

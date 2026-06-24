@@ -11,7 +11,9 @@ class PaymentRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get(self, payment_id: UUID, tenant_id: UUID | None = None) -> Optional[Payment]:
+    async def get(
+        self, payment_id: UUID, tenant_id: UUID | None = None
+    ) -> Optional[Payment]:
         stmt = select(Payment).where(Payment.id == payment_id)
         if tenant_id:
             stmt = stmt.where(Payment.tenant_id == tenant_id)

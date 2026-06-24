@@ -42,7 +42,9 @@ async def test_list_users_librarian(async_client, librarian_headers, test_librar
 
 
 @pytest.mark.asyncio
-async def test_list_users_super_admin(async_client, super_admin_headers, test_super_admin):
+async def test_list_users_super_admin(
+    async_client, super_admin_headers, test_super_admin
+):
     """GET /api/v1/users → 200 for super admin."""
     response = await async_client.get("/api/v1/users", headers=super_admin_headers)
     assert response.status_code == 200

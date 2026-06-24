@@ -29,8 +29,12 @@ class AnalyticsService:
         """Aggregate all key metrics for the analytics dashboard."""
         book_stmt = select(func.count()).select_from(Book)
         borrower_stmt = select(func.count()).select_from(Borrower)
-        active_loans_stmt = select(func.count()).select_from(Loan).where(Loan.status == "issued")
-        overdue_stmt = select(func.count()).select_from(Loan).where(Loan.status == "overdue")
+        active_loans_stmt = (
+            select(func.count()).select_from(Loan).where(Loan.status == "issued")
+        )
+        overdue_stmt = (
+            select(func.count()).select_from(Loan).where(Loan.status == "overdue")
+        )
         fines_stmt = (
             select(func.coalesce(func.sum(Fine.paid_amount), 0))
             .select_from(Fine)
@@ -50,9 +54,10 @@ class AnalyticsService:
         overdue_loans = await self.session.scalar(overdue_stmt) or 0
         total_fines_collected = await self.session.scalar(fines_stmt) or 0
 
-        total_ebook_sales = await self.session.scalar(
-            select(func.count()).select_from(EbookPurchase)
-        ) or 0
+        total_ebook_sales = (
+            await self.session.scalar(select(func.count()).select_from(EbookPurchase))
+            or 0
+        )
 
         month_start = datetime.now(timezone.utc).replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
@@ -65,11 +70,14 @@ class AnalyticsService:
         if tenant_id:
             fine_revenue_stmt = fine_revenue_stmt.where(Fine.tenant_id == tenant_id)
 
-        ebook_revenue = await self.session.scalar(
-            select(func.coalesce(func.sum(EbookPurchase.amount), 0))
-            .select_from(EbookPurchase)
-            .where(EbookPurchase.created_at >= month_start)
-        ) or 0
+        ebook_revenue = (
+            await self.session.scalar(
+                select(func.coalesce(func.sum(EbookPurchase.amount), 0))
+                .select_from(EbookPurchase)
+                .where(EbookPurchase.created_at >= month_start)
+            )
+            or 0
+        )
         fine_revenue = await self.session.scalar(fine_revenue_stmt) or 0
         revenue_this_month = float(fine_revenue) + float(ebook_revenue)
 
@@ -86,7 +94,9 @@ class AnalyticsService:
             top_books=top_books,
         )
 
-    async def get_trends(self, tenant_id: UUID | None = None, days: int = 30) -> list[TrendPoint]:
+    async def get_trends(
+        self, tenant_id: UUID | None = None, days: int = 30
+    ) -> list[TrendPoint]:
         """Daily loan counts for the last N days."""
         since = datetime.now(timezone.utc) - timedelta(days=days)
         date_col = func.date(Loan.issued_at).label("date")
@@ -100,12 +110,11 @@ class AnalyticsService:
             stmt = stmt.where(Loan.tenant_id == tenant_id)
 
         result = await self.session.execute(stmt)
-        return [
-            TrendPoint(date=str(row.date), count=row.count)
-            for row in result.all()
-        ]
+        return [TrendPoint(date=str(row.date), count=row.count) for row in result.all()]
 
-    async def get_top_books(self, tenant_id: UUID | None = None, limit: int = 10) -> list[BookStat]:
+    async def get_top_books(
+        self, tenant_id: UUID | None = None, limit: int = 10
+    ) -> list[BookStat]:
         return await self._fetch_top_books(tenant_id, limit)
 
     async def _fetch_top_books(

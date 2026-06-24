@@ -17,13 +17,17 @@ async def get_library_profile(
     if not current_user.tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User must be associated with a tenant to access library profile."
+            detail="User must be associated with a tenant to access library profile.",
         )
     service = LibraryService(db)
     return await service.get_profile(UUID(current_user.tenant_id))
 
 
-@router.put("/profile", response_model=LibraryResponse, dependencies=[Depends(require_minimum_role(UserRole.LIBRARY_ADMIN))])
+@router.put(
+    "/profile",
+    response_model=LibraryResponse,
+    dependencies=[Depends(require_minimum_role(UserRole.LIBRARY_ADMIN))],
+)
 async def update_library_profile(
     data: LibraryUpdate,
     current_user: CurrentUser,
@@ -32,7 +36,7 @@ async def update_library_profile(
     if not current_user.tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User must be associated with a tenant to update library profile."
+            detail="User must be associated with a tenant to update library profile.",
         )
     service = LibraryService(db)
     profile = await service.update_profile(UUID(current_user.tenant_id), data)

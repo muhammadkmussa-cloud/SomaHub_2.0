@@ -16,8 +16,7 @@ class TenantService:
         tenant = await self.repo.get_by_id(tenant_id)
         if not tenant:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Tenant not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
             )
         return tenant
 
@@ -25,8 +24,7 @@ class TenantService:
         tenant = await self.repo.get_by_slug(slug)
         if not tenant:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Tenant not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
             )
         return tenant
 
@@ -39,9 +37,9 @@ class TenantService:
         if existing_slug:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Tenant with this slug already exists"
+                detail="Tenant with this slug already exists",
             )
-        
+
         existing_email = await self.repo.get_by_email(data.email)
         if existing_email:
             raise HTTPException(
@@ -54,18 +52,18 @@ class TenantService:
             slug=data.slug,
             email=data.email,
             library_type=data.library_type,
-            location=data.location
+            location=data.location,
         )
 
     async def update_tenant(self, tenant_id: UUID, data: TenantUpdate) -> Tenant:
         tenant = await self.get_tenant(tenant_id)
-        
+
         if data.slug:
             existing = await self.repo.get_by_slug(data.slug)
             if existing and existing.id != tenant_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Tenant with this slug already exists"
+                    detail="Tenant with this slug already exists",
                 )
 
         return await self.repo.update(tenant, **data.model_dump(exclude_unset=True))

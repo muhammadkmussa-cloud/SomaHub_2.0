@@ -16,7 +16,9 @@ async def test_create_ebook(async_client, librarian_headers):
         "category": "Technology",
         "price": 9.99,
     }
-    response = await async_client.post("/api/v1/ebooks", json=payload, headers=librarian_headers)
+    response = await async_client.post(
+        "/api/v1/ebooks", json=payload, headers=librarian_headers
+    )
     assert response.status_code == 201
     data = response.json()
     assert data["title"] == "Digital Book"
@@ -27,7 +29,9 @@ async def test_create_ebook(async_client, librarian_headers):
 async def test_create_ebook_unauthorized(async_client, auth_headers):
     """POST /api/v1/ebooks → 403 for reader."""
     payload = {"title": "Test", "author": "Author", "price": 0.00}
-    response = await async_client.post("/api/v1/ebooks", json=payload, headers=auth_headers)
+    response = await async_client.post(
+        "/api/v1/ebooks", json=payload, headers=auth_headers
+    )
     assert response.status_code == 403
 
 
@@ -48,7 +52,9 @@ async def test_get_ebook(async_client, librarian_headers):
     )
     ebook_id = created.json()["id"]
 
-    response = await async_client.get(f"/api/v1/ebooks/{ebook_id}", headers=librarian_headers)
+    response = await async_client.get(
+        f"/api/v1/ebooks/{ebook_id}", headers=librarian_headers
+    )
     assert response.status_code == 200
     assert response.json()["title"] == "Specific Ebook"
 
@@ -56,7 +62,9 @@ async def test_get_ebook(async_client, librarian_headers):
 @pytest.mark.asyncio
 async def test_get_ebook_not_found(async_client, librarian_headers):
     """GET /api/v1/ebooks/{id} → 404."""
-    response = await async_client.get(f"/api/v1/ebooks/{uuid4()}", headers=librarian_headers)
+    response = await async_client.get(
+        f"/api/v1/ebooks/{uuid4()}", headers=librarian_headers
+    )
     assert response.status_code == 404
 
 
@@ -90,7 +98,9 @@ async def test_delete_ebook(async_client, librarian_headers):
     )
     ebook_id = created.json()["id"]
 
-    response = await async_client.delete(f"/api/v1/ebooks/{ebook_id}", headers=librarian_headers)
+    response = await async_client.delete(
+        f"/api/v1/ebooks/{ebook_id}", headers=librarian_headers
+    )
     assert response.status_code == 204
 
 
@@ -99,10 +109,17 @@ async def test_search_ebooks(async_client, librarian_headers, auth_headers):
     """GET /api/v1/ebooks?search=... → filtered."""
     await async_client.post(
         "/api/v1/ebooks",
-        json={"title": "UniqueEbookSearch", "author": "Author", "price": 0.00, "status": "published"},
+        json={
+            "title": "UniqueEbookSearch",
+            "author": "Author",
+            "price": 0.00,
+            "status": "published",
+        },
         headers=librarian_headers,
     )
 
-    response = await async_client.get("/api/v1/ebooks?search=UniqueEbookSearch", headers=auth_headers)
+    response = await async_client.get(
+        "/api/v1/ebooks?search=UniqueEbookSearch", headers=auth_headers
+    )
     assert response.status_code == 200
     assert any(e["title"] == "UniqueEbookSearch" for e in response.json())

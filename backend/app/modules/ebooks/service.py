@@ -17,7 +17,9 @@ class EbookService:
     async def get_ebook(self, ebook_id: UUID) -> Ebook:
         ebook = await self.repo.get(ebook_id)
         if not ebook:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ebook not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Ebook not found"
+            )
         return ebook
 
     async def list_ebooks(

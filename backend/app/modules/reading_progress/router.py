@@ -3,7 +3,10 @@ from uuid import UUID
 from fastapi import APIRouter
 
 from app.core.dependencies import CurrentUser, DBSession
-from app.modules.reading_progress.schemas import ReadingProgressCreate, ReadingProgressResponse
+from app.modules.reading_progress.schemas import (
+    ReadingProgressCreate,
+    ReadingProgressResponse,
+)
 from app.modules.reading_progress.service import ReadingProgressService
 
 router = APIRouter(prefix="/reading-progress", tags=["Reading Progress"])

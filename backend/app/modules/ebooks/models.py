@@ -16,7 +16,9 @@ def utcnow() -> datetime:
 class Ebook(Base):
     __tablename__ = "ebooks"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("tenants.id", ondelete="CASCADE"),
@@ -30,6 +32,12 @@ class Ebook(Base):
     price: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00, nullable=False)
     cover_url: Mapped[Optional[str]] = mapped_column(Text)
     file_url: Mapped[Optional[str]] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(50), default="draft", nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False
+    )

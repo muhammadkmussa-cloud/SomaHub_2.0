@@ -10,7 +10,9 @@ class UserProfileUpdate(BaseModel):
 
 
 class UserRoleUpdate(BaseModel):
-    role: str = Field(..., description="Role of the user (e.g. reader, librarian, library_admin)")
+    role: str = Field(
+        ..., description="Role of the user (e.g. reader, librarian, library_admin)"
+    )
 
 
 class UserResponse(BaseModel):

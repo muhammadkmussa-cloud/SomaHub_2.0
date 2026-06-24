@@ -21,7 +21,7 @@ async def list_ebooks(
     db: DBSession = None,
 ):
     service = EbookService(db)
-    
+
     # Readers see only published ebooks. Librarians/Admins can see all
     status_filter = "published"
     if current_user and has_minimum_role(current_user.role, UserRole.LIBRARIAN):
@@ -45,7 +45,12 @@ async def get_ebook(
     return await service.get_ebook(ebook_id)
 
 
-@router.post("", response_model=EbookResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))])
+@router.post(
+    "",
+    response_model=EbookResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))],
+)
 async def create_ebook(
     data: EbookCreate,
     current_user: CurrentUser,
@@ -58,7 +63,11 @@ async def create_ebook(
     return ebook
 
 
-@router.put("/{ebook_id}", response_model=EbookResponse, dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))])
+@router.put(
+    "/{ebook_id}",
+    response_model=EbookResponse,
+    dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))],
+)
 async def update_ebook(
     ebook_id: UUID,
     data: EbookUpdate,
@@ -70,7 +79,11 @@ async def update_ebook(
     return ebook
 
 
-@router.delete("/{ebook_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))])
+@router.delete(
+    "/{ebook_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_minimum_role(UserRole.LIBRARIAN))],
+)
 async def delete_ebook(
     ebook_id: UUID,
     db: DBSession = None,

@@ -8,7 +8,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.dependencies import CurrentUser, DBSession
 from app.core.permissions import UserRole, require_minimum_role
-from app.modules.analytics.schemas import DashboardAnalytics, TopBooksResponse, TrendResponse
+from app.modules.analytics.schemas import (
+    DashboardAnalytics,
+    TopBooksResponse,
+    TrendResponse,
+)
 from app.modules.analytics.service import AnalyticsService
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
@@ -68,5 +72,7 @@ async def get_top_books(
 ):
     """Return most borrowed books."""
     service = AnalyticsService(db)
-    books = await service.get_top_books(tenant_id=_get_tenant_id(current_user), limit=limit)
+    books = await service.get_top_books(
+        tenant_id=_get_tenant_id(current_user), limit=limit
+    )
     return TopBooksResponse(books=books)

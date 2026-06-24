@@ -22,9 +22,7 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_id(self, user_id: UUID) -> Optional[User]:
-        result = await self.session.execute(
-            select(User).where(User.id == user_id)
-        )
+        result = await self.session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 
     async def create(self, **kwargs) -> User:
@@ -38,6 +36,7 @@ class UserRepository:
 
     async def update_last_login(self, user_id: UUID) -> None:
         from datetime import datetime, timezone
+
         await self.session.execute(
             update(User)
             .where(User.id == user_id)
@@ -46,9 +45,7 @@ class UserRepository:
 
     async def set_email_verified(self, user_id: UUID) -> None:
         await self.session.execute(
-            update(User)
-            .where(User.id == user_id)
-            .values(is_email_verified=True)
+            update(User).where(User.id == user_id).values(is_email_verified=True)
         )
 
     async def update_password(self, user_id: UUID, hashed_password: str) -> None:
@@ -64,9 +61,7 @@ class TenantRepository:
         self.session = session
 
     async def get_by_slug(self, slug: str) -> Optional[Tenant]:
-        result = await self.session.execute(
-            select(Tenant).where(Tenant.slug == slug)
-        )
+        result = await self.session.execute(select(Tenant).where(Tenant.slug == slug))
         return result.scalar_one_or_none()
 
     async def get_by_email(self, email: str) -> Optional[Tenant]:
@@ -92,6 +87,7 @@ class TenantRepository:
 
     def _slugify(self, name: str) -> str:
         import re
+
         slug = name.lower().strip()
         slug = re.sub(r"[^a-z0-9\s-]", "", slug)
         slug = re.sub(r"[\s-]+", "-", slug)

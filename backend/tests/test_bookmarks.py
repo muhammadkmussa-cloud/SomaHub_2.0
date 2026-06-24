@@ -10,7 +10,9 @@ async def test_list_bookmarks(async_client, auth_headers, test_free_ebook):
     """GET /api/v1/bookmarks/ebook/{ebook_id} → list."""
     ebook_id = str(test_free_ebook.id)
 
-    response = await async_client.get(f"/api/v1/bookmarks/ebook/{ebook_id}", headers=auth_headers)
+    response = await async_client.get(
+        f"/api/v1/bookmarks/ebook/{ebook_id}", headers=auth_headers
+    )
     assert response.status_code == 200
 
 
@@ -40,5 +42,7 @@ async def test_delete_bookmark(async_client, auth_headers, test_free_ebook):
     )
     bm_id = bm.json()["id"]
 
-    response = await async_client.delete(f"/api/v1/bookmarks/{bm_id}", headers=auth_headers)
+    response = await async_client.delete(
+        f"/api/v1/bookmarks/{bm_id}", headers=auth_headers
+    )
     assert response.status_code == 204

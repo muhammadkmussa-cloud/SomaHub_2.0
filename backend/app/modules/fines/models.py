@@ -22,7 +22,9 @@ def utcnow() -> datetime:
 class Fine(Base):
     __tablename__ = "fines"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("tenants.id", ondelete="CASCADE"),
@@ -42,17 +44,23 @@ class Fine(Base):
     )
     reason: Mapped[str] = mapped_column(String(100), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-    paid_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0.00"), nullable=False)
-    status: Mapped[str] = mapped_column(String(30), default="unpaid", nullable=False, index=True)
+    paid_amount: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), default=Decimal("0.00"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        String(30), default="unpaid", nullable=False, index=True
+    )
     notes: Mapped[Optional[str]] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False
+    )
     paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     waived_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     loan: Mapped[Optional["Loan"]] = relationship("Loan", back_populates="fines")
     borrower: Mapped["Borrower"] = relationship("Borrower")
 
-    __table_args__ = (
-        Index("ix_fines_tenant_status", "tenant_id", "status"),
-    )
+    __table_args__ = (Index("ix_fines_tenant_status", "tenant_id", "status"),)

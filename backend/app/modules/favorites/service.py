@@ -15,7 +15,9 @@ class FavoriteService:
         self.repo = FavoriteRepository(session)
         self.ebook_repo = EbookRepository(session)
 
-    async def list_favorites(self, user_id: UUID, limit: int = 100, offset: int = 0) -> List[Favorite]:
+    async def list_favorites(
+        self, user_id: UUID, limit: int = 100, offset: int = 0
+    ) -> List[Favorite]:
         return await self.repo.list_for_user(user_id, limit, offset)
 
     async def add_favorite(self, user_id: UUID, data: FavoriteCreate) -> Favorite:
@@ -23,8 +25,7 @@ class FavoriteService:
         ebook = await self.ebook_repo.get(data.ebook_id)
         if not ebook:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Ebook not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Ebook not found"
             )
 
         # Prevent duplicate favoriting
@@ -38,7 +39,6 @@ class FavoriteService:
         favorite = await self.repo.get(user_id, ebook_id)
         if not favorite:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Favorite not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Favorite not found"
             )
         await self.repo.delete(favorite)

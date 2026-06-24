@@ -8,7 +8,9 @@ import pytest
 @pytest.mark.asyncio
 async def test_get_library_profile(async_client, librarian_headers, test_librarian):
     """GET /api/v1/libraries/profile → 200."""
-    response = await async_client.get("/api/v1/libraries/profile", headers=librarian_headers)
+    response = await async_client.get(
+        "/api/v1/libraries/profile", headers=librarian_headers
+    )
     assert response.status_code == 200
     data = response.json()
     assert "name" in data

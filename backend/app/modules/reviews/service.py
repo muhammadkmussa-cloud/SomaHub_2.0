@@ -17,7 +17,9 @@ class ReviewService:
         self.purchase_repo = EbookPurchaseRepository(session)
         self.ebook_repo = EbookRepository(session)
 
-    async def list_reviews(self, ebook_id: UUID, limit: int = 50, offset: int = 0) -> List[Review]:
+    async def list_reviews(
+        self, ebook_id: UUID, limit: int = 50, offset: int = 0
+    ) -> List[Review]:
         return await self.repo.list_for_ebook(ebook_id, limit, offset)
 
     async def add_review(self, user_id: UUID, data: ReviewCreate) -> Review:
@@ -25,8 +27,7 @@ class ReviewService:
         ebook = await self.ebook_repo.get(data.ebook_id)
         if not ebook:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Ebook not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Ebook not found"
             )
 
         # Ensure user purchased the ebook before reviewing
@@ -34,7 +35,7 @@ class ReviewService:
         if not owned and ebook.price > 0.0:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You must purchase this ebook before reviewing it."
+                detail="You must purchase this ebook before reviewing it.",
             )
 
         # Prevent duplicate reviews
@@ -42,22 +43,23 @@ class ReviewService:
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="You have already reviewed this ebook. You can update your existing review."
+                detail="You have already reviewed this ebook. You can update your existing review.",
             )
 
         return await self.repo.create(user_id, **data.model_dump())
 
-    async def update_review(self, user_id: UUID, review_id: UUID, data: ReviewUpdate) -> Review:
+    async def update_review(
+        self, user_id: UUID, review_id: UUID, data: ReviewUpdate
+    ) -> Review:
         review = await self.repo.get(review_id)
         if not review:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Review not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
             )
         if review.user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot edit someone else's review"
+                detail="Cannot edit someone else's review",
             )
         return await self.repo.update(review, **data.model_dump(exclude_none=True))
 
@@ -65,12 +67,11 @@ class ReviewService:
         review = await self.repo.get(review_id)
         if not review:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Review not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
             )
         if review.user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot delete someone else's review"
+                detail="Cannot delete someone else's review",
             )
         await self.repo.delete(review)

@@ -21,9 +21,7 @@ async def search_books(
     return None  # Caller handles SQL fallback
 
 
-async def search_ebooks(
-    query: str, limit: int = 20
-) -> List[dict[str, Any]] | None:
+async def search_ebooks(query: str, limit: int = 20) -> List[dict[str, Any]] | None:
     """
     Search ebooks. Returns None for 'basic' — callers should apply SQL ILIKE filters.
     """

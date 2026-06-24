@@ -45,7 +45,9 @@ async def test_issue_loan(async_client, librarian_headers, test_librarian):
 
 
 @pytest.mark.asyncio
-async def test_issue_loan_suspended_borrower(async_client, librarian_headers, admin_headers):
+async def test_issue_loan_suspended_borrower(
+    async_client, librarian_headers, admin_headers
+):
     """POST /api/v1/loans → 409 for suspended borrower."""
     # Create borrower
     br = await async_client.post(
@@ -56,7 +58,9 @@ async def test_issue_loan_suspended_borrower(async_client, librarian_headers, ad
     borrower_id = br.json()["id"]
 
     # Suspend
-    await async_client.post(f"/api/v1/borrowers/{borrower_id}/suspend", headers=admin_headers)
+    await async_client.post(
+        f"/api/v1/borrowers/{borrower_id}/suspend", headers=admin_headers
+    )
 
     # Create book + copy
     bk = await async_client.post(
@@ -73,7 +77,11 @@ async def test_issue_loan_suspended_borrower(async_client, librarian_headers, ad
     due = (date.today() + timedelta(days=14)).isoformat()
     response = await async_client.post(
         "/api/v1/loans",
-        json={"borrower_id": borrower_id, "book_copy_id": cp.json()["id"], "due_date": due},
+        json={
+            "borrower_id": borrower_id,
+            "book_copy_id": cp.json()["id"],
+            "due_date": due,
+        },
         headers=librarian_headers,
     )
     assert response.status_code == 403
@@ -110,13 +118,19 @@ async def test_return_loan(async_client, librarian_headers):
     due = (date.today() + timedelta(days=14)).isoformat()
     loan = await async_client.post(
         "/api/v1/loans",
-        json={"borrower_id": br.json()["id"], "book_copy_id": cp.json()["id"], "due_date": due},
+        json={
+            "borrower_id": br.json()["id"],
+            "book_copy_id": cp.json()["id"],
+            "due_date": due,
+        },
         headers=librarian_headers,
     )
     loan_id = loan.json()["id"]
 
     # Return
-    response = await async_client.post(f"/api/v1/loans/{loan_id}/return", headers=librarian_headers)
+    response = await async_client.post(
+        f"/api/v1/loans/{loan_id}/return", headers=librarian_headers
+    )
     assert response.status_code == 200
     assert response.json()["status"] == "returned"
 
@@ -142,12 +156,18 @@ async def test_mark_lost(async_client, librarian_headers):
     due = (date.today() + timedelta(days=14)).isoformat()
     loan = await async_client.post(
         "/api/v1/loans",
-        json={"borrower_id": br.json()["id"], "book_copy_id": cp.json()["id"], "due_date": due},
+        json={
+            "borrower_id": br.json()["id"],
+            "book_copy_id": cp.json()["id"],
+            "due_date": due,
+        },
         headers=librarian_headers,
     )
     loan_id = loan.json()["id"]
 
-    response = await async_client.post(f"/api/v1/loans/{loan_id}/lost", headers=librarian_headers)
+    response = await async_client.post(
+        f"/api/v1/loans/{loan_id}/lost", headers=librarian_headers
+    )
     assert response.status_code == 200
     assert response.json()["status"] == "lost"
 
@@ -175,7 +195,11 @@ async def test_issue_loan_unavailable_copy(async_client, librarian_headers):
     # Issue first loan — should succeed
     resp1 = await async_client.post(
         "/api/v1/loans",
-        json={"borrower_id": br.json()["id"], "book_copy_id": cp.json()["id"], "due_date": due},
+        json={
+            "borrower_id": br.json()["id"],
+            "book_copy_id": cp.json()["id"],
+            "due_date": due,
+        },
         headers=librarian_headers,
     )
     assert resp1.status_code == 200
@@ -183,7 +207,11 @@ async def test_issue_loan_unavailable_copy(async_client, librarian_headers):
     # Try issuing the same copy again — should fail
     resp2 = await async_client.post(
         "/api/v1/loans",
-        json={"borrower_id": br.json()["id"], "book_copy_id": cp.json()["id"], "due_date": due},
+        json={
+            "borrower_id": br.json()["id"],
+            "book_copy_id": cp.json()["id"],
+            "due_date": due,
+        },
         headers=librarian_headers,
     )
     assert resp2.status_code == 409

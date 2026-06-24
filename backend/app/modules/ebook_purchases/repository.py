@@ -17,7 +17,9 @@ class EbookPurchaseRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_purchase(self, user_id: UUID, ebook_id: UUID) -> Optional[EbookPurchase]:
+    async def get_purchase(
+        self, user_id: UUID, ebook_id: UUID
+    ) -> Optional[EbookPurchase]:
         stmt = (
             select(EbookPurchase)
             .options(joinedload(EbookPurchase.ebook))
@@ -29,10 +31,17 @@ class EbookPurchaseRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_for_user(self, user_id: UUID, limit: int = 100, offset: int = 0) -> List[EbookPurchase]:
-        stmt = select(EbookPurchase).options(joinedload(EbookPurchase.ebook)).where(
-            EbookPurchase.user_id == user_id
-        ).order_by(EbookPurchase.created_at.desc()).offset(offset).limit(limit)
+    async def list_for_user(
+        self, user_id: UUID, limit: int = 100, offset: int = 0
+    ) -> List[EbookPurchase]:
+        stmt = (
+            select(EbookPurchase)
+            .options(joinedload(EbookPurchase.ebook))
+            .where(EbookPurchase.user_id == user_id)
+            .order_by(EbookPurchase.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

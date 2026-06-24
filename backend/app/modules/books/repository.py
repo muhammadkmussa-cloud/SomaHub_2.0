@@ -32,16 +32,26 @@ class BookRepository:
             stmt = stmt.where(Book.tenant_id == tenant_id)
         if search:
             value = f"%{search.strip()}%"
-            stmt = stmt.where(or_(Book.title.ilike(value), Book.author.ilike(value), Book.isbn.ilike(value)))
+            stmt = stmt.where(
+                or_(
+                    Book.title.ilike(value),
+                    Book.author.ilike(value),
+                    Book.isbn.ilike(value),
+                )
+            )
         if author:
             stmt = stmt.where(Book.author.ilike(f"%{author.strip()}%"))
         if isbn:
             stmt = stmt.where(Book.isbn == isbn.strip())
-        result = await self.session.execute(stmt.order_by(Book.created_at.desc()).offset(offset).limit(limit))
+        result = await self.session.execute(
+            stmt.order_by(Book.created_at.desc()).offset(offset).limit(limit)
+        )
         return list(result.scalars().all())
 
     async def create(self, tenant_id: UUID, **data) -> Book:
-        book = Book(tenant_id=tenant_id, available_copies=data.get("total_copies", 0), **data)
+        book = Book(
+            tenant_id=tenant_id, available_copies=data.get("total_copies", 0), **data
+        )
         self.session.add(book)
         await self.session.flush()
         await self.session.refresh(book)
@@ -64,7 +74,9 @@ class BookRepository:
         await self.session.delete(book)
         await self.session.flush()
 
-    async def count_active_loans(self, book_id: UUID, tenant_id: UUID | None = None) -> int:
+    async def count_active_loans(
+        self, book_id: UUID, tenant_id: UUID | None = None
+    ) -> int:
         from app.modules.loans.models import Loan
 
         stmt = (
@@ -83,7 +95,9 @@ class BookCopyRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get(self, copy_id: UUID, tenant_id: UUID | None = None) -> Optional[BookCopy]:
+    async def get(
+        self, copy_id: UUID, tenant_id: UUID | None = None
+    ) -> Optional[BookCopy]:
         stmt = select(BookCopy).where(BookCopy.id == copy_id)
         if tenant_id:
             stmt = stmt.where(BookCopy.tenant_id == tenant_id)
@@ -105,7 +119,9 @@ class BookCopyRepository:
             stmt = stmt.where(BookCopy.book_id == book_id)
         if status:
             stmt = stmt.where(BookCopy.status == status)
-        result = await self.session.execute(stmt.order_by(BookCopy.created_at.desc()).offset(offset).limit(limit))
+        result = await self.session.execute(
+            stmt.order_by(BookCopy.created_at.desc()).offset(offset).limit(limit)
+        )
         return list(result.scalars().all())
 
     async def create(self, tenant_id: UUID, **data) -> BookCopy:
