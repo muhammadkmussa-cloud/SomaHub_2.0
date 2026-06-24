@@ -192,3 +192,14 @@ jobs:
           DATABASE_URL: sqlite+aiosqlite:///./e2e.db
           SECRET_KEY: e2e-secret-key-not-for-production-12345678901234567890
         run: npm run test:e2e
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: trufflehog scan
+        uses: trufflesecurity/trufflehog-action@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          regex_only: false

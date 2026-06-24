@@ -39,3 +39,6 @@ __pycache__/
 *.db
 frontend/test-results/
 frontend/playwright-report/
+
+# Ignore virtualenv created by uv or local venv
+backend/.venv/
