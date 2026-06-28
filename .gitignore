@@ -27,6 +27,10 @@ frontend/.env.*.local
 .DS_Store
 Thumbs.db
 
+# ── AI / Vector Store ──────────────────────────────────────────────────────────
+backend/data/vectordb/
+backend/data/
+
 # ── IDE ───────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/

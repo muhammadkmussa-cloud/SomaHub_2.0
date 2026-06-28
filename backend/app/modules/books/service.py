@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from typing import List
 from uuid import UUID
 
@@ -8,6 +10,8 @@ from app.core.plan_limits import enforce_book_limit
 from app.modules.books.models import Book, BookCopy
 from app.modules.books.repository import BookCopyRepository, BookRepository
 from app.modules.books.schemas import BookCopyCreate, BookCreate, BookUpdate
+
+logger = logging.getLogger("somahub.books.service")
 
 
 class BookService:
@@ -36,7 +40,13 @@ class BookService:
 
     async def create_book(self, tenant_id: UUID, data: BookCreate) -> Book:
         await enforce_book_limit(self.repo.session, tenant_id)
-        return await self.repo.create(tenant_id, **data.model_dump())
+        book = await self.repo.create(tenant_id, **data.model_dump())
+        try:
+            from app.ai.book_indexer import BookIndexer
+            asyncio.ensure_future(self._index_book(book))
+        except Exception:
+            pass
+        return book
 
     async def update_book(
         self, book_id: UUID, tenant_id: UUID, data: BookUpdate
@@ -50,7 +60,13 @@ class BookService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Total copies cannot be lower than active loans",
                 )
-        return await self.repo.update(book, **update_data)
+        updated_book = await self.repo.update(book, **update_data)
+        try:
+            from app.ai.book_indexer import BookIndexer
+            asyncio.ensure_future(self._reindex_book(updated_book))
+        except Exception:
+            pass
+        return updated_book
 
     async def delete_book(self, book_id: UUID, tenant_id: UUID) -> None:
         book = await self.get_book(book_id, tenant_id)
@@ -59,12 +75,34 @@ class BookService:
                 status_code=status.HTTP_409_CONFLICT, detail="Book has active loans"
             )
         await self.repo.delete(book)
+        try:
+            from app.ai.book_indexer import BookIndexer
+            indexer = BookIndexer()
+            await indexer.remove_book(book.id)
+        except Exception:
+            pass
 
     async def create_copy(self, tenant_id: UUID, data: BookCopyCreate) -> BookCopy:
         book = await self.get_book(data.book_id, tenant_id)
         copy = await self.copy_repo.create(tenant_id, **data.model_dump())
         await self.repo.update(book, total_copies=book.total_copies + 1)
         return copy
+
+    async def _index_book(self, book: Book) -> None:
+        try:
+            from app.ai.book_indexer import BookIndexer
+            indexer = BookIndexer()
+            await indexer.index_book(book)
+        except Exception as e:
+            logger.debug("Background book indexing skipped: %s", e)
+
+    async def _reindex_book(self, book: Book) -> None:
+        try:
+            from app.ai.book_indexer import BookIndexer
+            indexer = BookIndexer()
+            await indexer.reindex_book(book)
+        except Exception as e:
+            logger.debug("Background book reindexing skipped: %s", e)
 
     async def list_copies(
         self,

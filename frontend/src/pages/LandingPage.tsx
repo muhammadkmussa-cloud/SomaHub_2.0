@@ -40,7 +40,7 @@ const features = [
   {
     icon: <Scan size={22} className="text-emerald-400" />,
     title: 'OCR Intelligence',
-    desc: 'Scan ISBN barcodes, book covers, and student IDs. Powered by Gemini AI for instant metadata extraction.',
+    desc: 'Scan ISBN barcodes, book covers, and student IDs. Powered by local AI for instant metadata extraction.',
   },
   {
     icon: <BarChart2 size={22} className="text-emerald-400" />,
@@ -158,7 +158,7 @@ export default function LandingPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium mb-8 animate-fade-in">
             <Zap size={14} />
-            Now with Gemini AI-powered OCR scanning
+            Now with AI-powered OCR scanning
           </div>
 
           {/* Headline */}

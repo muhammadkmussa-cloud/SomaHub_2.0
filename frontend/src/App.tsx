@@ -5,6 +5,7 @@ import { queryClient } from './lib/queryClient';
 import { Spinner } from './components/ui';
 import { ProtectedRoute } from './router/ProtectedRoute';
 import { DashboardShell } from './components/layout/DashboardShell';
+import { ChatbotContainer } from './components/chatbot/ChatbotContainer';
 import { useAuthRefresh } from './hooks/useAuthRefresh';
 import type { UserRole } from './stores/authStore';
 
@@ -121,6 +122,8 @@ export default function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
+
+        <ChatbotContainer />
       </BrowserRouter>
     </QueryClientProvider>
   );

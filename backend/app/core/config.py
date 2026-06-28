@@ -73,8 +73,11 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@somahub.io"
     EMAIL_FROM_NAME: str = "SomaHub"
 
-    # ── OCR (Gemini) ──────────────────────────────────────────────────
-    GEMINI_API_KEY: str = ""
+    # ── AI / Ollama ───────────────────────────────────────────────────
+    OLLAMA_HOST: str = "http://localhost:11434"
+    AI_CHAT_MODEL: str = "qwen3:8b"
+    AI_EMBEDDING_MODEL: str = "nomic-embed-text"
+    AI_VISION_MODEL: str = "granite-vision:latest"
 
     # ── Payments ──────────────────────────────────────────────────────
     STRIPE_SECRET_KEY: str = ""

@@ -19,6 +19,7 @@ from app.core.config import settings
 from app.core.database import Base
 
 # Import all models so Alembic can detect them
+from app.modules.audit.models import AuditLog  # noqa: F401
 from app.modules.auth.models import User, Tenant  # noqa: F401
 from app.modules.books.models import Book, BookCopy  # noqa: F401
 from app.modules.borrowers.models import Borrower  # noqa: F401

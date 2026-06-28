@@ -80,7 +80,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-3">
             {[
               'Multi-tenant library management',
-              'OCR-assisted book cataloging',
+              'AI-assisted book cataloging',
               'Digital bookstore with in-platform reader',
               'Real-time analytics & reporting',
             ].map((feat) => (

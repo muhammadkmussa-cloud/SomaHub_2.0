@@ -169,6 +169,7 @@ def _s3_bucket_for(folder: str) -> str:
         "ebooks": settings.S3_BUCKET_EBOOKS,
         "covers": settings.S3_BUCKET_COVERS,
         "avatars": settings.S3_BUCKET_AVATARS,
+        "ocr-uploads": "somahub-ocr-uploads",
     }
     return mapping.get(folder, "somahub-uploads")
 
@@ -178,5 +179,6 @@ def _supabase_bucket_for(folder: str) -> str:
         "ebooks": settings.SUPABASE_BUCKET_EBOOKS,
         "covers": settings.SUPABASE_BUCKET_COVERS,
         "avatars": settings.SUPABASE_BUCKET_AVATARS,
+        "ocr-uploads": settings.SUPABASE_BUCKET_OCR,
     }
     return mapping.get(folder, "uploads")
