@@ -34,6 +34,7 @@ from app.modules.bookmarks.models import Bookmark  # noqa: F401
 from app.modules.favorites.models import Favorite  # noqa: F401
 from app.modules.reviews.models import Review  # noqa: F401
 from app.modules.subscriptions.models import Subscription  # noqa: F401
+from app.modules.notifications.models import Notification  # noqa: F401
 
 # ── Alembic config object ─────────────────────────────────────────────────────
 config = context.config

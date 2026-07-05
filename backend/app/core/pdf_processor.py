@@ -246,6 +246,10 @@ def extract_structured_text(
     output: list[str] = []
     para_lines: list[str] = []
     blockquote_lines: list[str] = []
+    list_item_lines: list[str] = []
+    current_list_marker = ""
+    current_list_indent = ""
+    current_list_type = ""  # "bullet" or "number"
     
     def flush_para() -> None:
         """Push accumulated standard body text lines as a paragraph block."""
@@ -254,6 +258,7 @@ def extract_structured_text(
         combined = " ".join(para_lines).strip()
         combined = re.sub(r"-\s+", "", combined)
         if combined:
+            combined = _capitalize_sentences(combined)
             output.append(combined)
         para_lines.clear()
 
@@ -264,12 +269,28 @@ def extract_structured_text(
         combined = " ".join(blockquote_lines).strip()
         combined = re.sub(r"-\s+", "", combined)
         if combined:
+            combined = _capitalize_sentences(combined)
             output.append(f"> {combined}")
         blockquote_lines.clear()
+
+    def flush_list_item() -> None:
+        """Push accumulated list item lines as a list item block."""
+        if not list_item_lines:
+            return
+        combined = " ".join(list_item_lines).strip()
+        combined = re.sub(r"-\s+", "", combined)
+        if combined:
+            combined = _capitalize_sentences(combined)
+            if current_list_type == "bullet":
+                output.append(f"{current_list_indent}- {combined}")
+            else:
+                output.append(f"{current_list_indent}{current_list_marker}. {combined}")
+        list_item_lines.clear()
 
     def flush_all() -> None:
         flush_para()
         flush_blockquote()
+        flush_list_item()
 
     for page in doc:
         page_height = page.rect.height
@@ -282,9 +303,10 @@ def extract_structured_text(
             if block.get("type") != 0:
                 continue
 
-            # Reset list state at block boundary to prevent bleeding list status
+            # Reset block state at block boundary
             in_list = False
-            list_indent = ""
+            block_is_blockquote = None
+            flush_all()
 
             # Pre-merge lines on the same visual horizontal level to handle split bullets/numbers
             raw_lines = block.get("lines", [])
@@ -361,6 +383,7 @@ def extract_structured_text(
                     header_text = _capitalize_sentences(line_text)
                     output.append(f"\n{prefix} {header_text}\n")
                     in_list = False
+                    block_is_blockquote = None
                     continue
 
                 # List item detection
@@ -379,38 +402,37 @@ def extract_structured_text(
                 if bullet_match or number_match:
                     flush_all()
                     in_list = True
-                    list_indent = indent
+                    block_is_blockquote = None
                     
+                    current_list_indent = indent
                     if bullet_match:
+                        current_list_type = "bullet"
+                        current_list_marker = "-"
                         content = bullet_match.group(2).strip()
-                        content = _capitalize_sentences(content)
-                        output.append(f"{indent}- {content}")
+                        list_item_lines.append(content)
                     else:
-                        num_prefix = number_match.group(1)
+                        current_list_type = "number"
+                        current_list_marker = number_match.group(1)
                         content = number_match.group(2).strip()
-                        content = _capitalize_sentences(content)
-                        output.append(f"{indent}{num_prefix}. {content}")
+                        list_item_lines.append(content)
                 
                 elif in_list:
                     # Continuation of list item inside the same layout block
-                    content = _capitalize_sentences(line_text)
-                    if output:
-                        output[-1] = f"{output[-1]} {content}"
-                    else:
-                        output.append(f"{list_indent}  {content}")
+                    list_item_lines.append(line_text)
                 
                 else:
                     # Regular body text or blockquote
                     in_list = False
-                    is_blockquote = (line_x0 > body_left_margin + 20)
-                    content = _capitalize_sentences(line_text)
                     
-                    if is_blockquote:
+                    if block_is_blockquote is None:
+                        block_is_blockquote = (line_x0 > body_left_margin + 20)
+                    
+                    if block_is_blockquote:
                         flush_para()
-                        blockquote_lines.append(content)
+                        blockquote_lines.append(line_text)
                     else:
                         flush_blockquote()
-                        para_lines.append(content)
+                        para_lines.append(line_text)
                         
                         # Sentence-final punctuation indicates paragraph end boundaries
                         sentence_end = line_text[-1] in ".!?…\u201d\u2019" if line_text else False

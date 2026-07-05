@@ -7,6 +7,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
@@ -122,6 +123,9 @@ app.add_middleware(
 
 # ── Exception handlers ────────────────────────────────────────────────────────
 register_exception_handlers(app)
+
+# ── Static file serving (uploads: PDFs, covers, avatars) ──────────────────────
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 API_PREFIX = "/api/v1"

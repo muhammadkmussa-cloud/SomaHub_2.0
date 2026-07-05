@@ -1,13 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Bot,
-  X,
   Trash2,
   ChevronDown,
   Sparkles,
-  MessageSquare,
 } from 'lucide-react';
-import { cn } from '../ui';
 import { ChatbotMessage } from './ChatbotMessage';
 import { ChatbotInput } from './ChatbotInput';
 import { chatbotApi } from '../../lib/chatbot';
@@ -75,9 +72,10 @@ export function ChatbotPanel({ onClose }: ChatbotPanelProps) {
       .map((m) => ({ role: m.role, content: m.content }));
 
     let citations: Citation[] = [];
+    let hasError = false;
 
     try {
-      const fullAnswer = await chatbotApi.sendMessage(
+      await chatbotApi.sendMessage(
         content,
         history,
         (token) => {
@@ -95,17 +93,33 @@ export function ChatbotPanel({ onClose }: ChatbotPanelProps) {
         },
         (error) => {
           console.error('Chat error:', error);
+          hasError = true;
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last && last.role === 'assistant') {
+              last.content = 'Sorry, I encountered an error. Please try again later.';
+              last.error = true;
+            }
+            return updated;
+          });
         },
       );
 
-      setMessages((prev) => {
-        const updated = [...prev];
-        const last = updated[updated.length - 1];
-        if (last && last.role === 'assistant') {
-          last.citations = citations;
-        }
-        return updated;
-      });
+      if (!hasError) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last && last.role === 'assistant') {
+            last.citations = citations;
+            if (!last.content) {
+              last.content = 'Sorry, I did not receive a response from the AI assistant. Please try again.';
+              last.error = true;
+            }
+          }
+          return updated;
+        });
+      }
     } catch (err) {
       setMessages((prev) => {
         const updated = [...prev];

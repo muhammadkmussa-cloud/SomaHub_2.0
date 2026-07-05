@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Library } from 'lucide-react';
 import { ebooksApi } from '../../lib/ebooks';
-import { Badge, Card } from '../../components/ui';
+import { Badge, Button, Card } from '../../components/ui';
 import { EmptyState, ErrorState, LoadingState, PageHeader } from './phase2Helpers';
 
 export default function MyLibraryPage() {
@@ -30,24 +30,32 @@ export default function MyLibraryPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {purchases.map((purchase: { id: string; ebook_id: string; ebook?: { title: string; author: string } }) => (
-          <Card key={purchase.id} className="flex flex-col gap-3">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <Library size={18} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <Link
-                  to={`/dashboard/bookstore/${purchase.ebook_id}`}
-                  className="font-display font-semibold text-obsidian-900 hover:text-emerald-600 block truncate"
-                >
-                  {purchase.ebook?.title ?? 'Ebook'}
-                </Link>
-                <p className="text-sm text-obsidian-500 truncate">
-                  {purchase.ebook?.author ?? 'Unknown author'}
-                </p>
+          <Card key={purchase.id} className="flex flex-col gap-3 justify-between h-full">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                  <Library size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <Link
+                    to={`/dashboard/bookstore/${purchase.ebook_id}`}
+                    className="font-display font-semibold text-obsidian-900 hover:text-emerald-600 block truncate"
+                  >
+                    {purchase.ebook?.title ?? 'Ebook'}
+                  </Link>
+                  <p className="text-sm text-obsidian-500 truncate">
+                    {purchase.ebook?.author ?? 'Unknown author'}
+                  </p>
+                </div>
               </div>
             </div>
-            <Badge variant="emerald">Owned</Badge>
+            
+            <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-obsidian-50">
+              <Badge variant="emerald">Owned</Badge>
+              <Link to={`/dashboard/my-library/read/${purchase.ebook_id}`}>
+                <Button size="sm">Read</Button>
+              </Link>
+            </div>
           </Card>
         ))}
       </div>

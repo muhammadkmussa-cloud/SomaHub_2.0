@@ -126,4 +126,34 @@ export const circulationApi = {
     const { data } = await api.post<Fine>(`/fines/${fineId}/waive`);
     return data;
   },
+  scanBookCover: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await api.post<{
+      title?: string;
+      subtitle?: string;
+      authors?: string[];
+      publisher?: string;
+      isbn?: string;
+      categories?: string[];
+    }>('/ocr/book-cover', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  },
+  scanStudentID: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await api.post<{
+      name?: string;
+      student_id?: string;
+    }>('/ocr/student-id', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  },
 };

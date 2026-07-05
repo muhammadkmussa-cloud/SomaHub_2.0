@@ -88,13 +88,14 @@ class RAGPipeline:
             if context:
                 system += f"\n\nCurrent context available: {len(results)} relevant documents."
 
-            async for chunk in self.ollama.chat_with_context(
+            stream_generator = await self.ollama.chat_with_context(
                 system_prompt=system,
                 user_message=question,
                 context=context,
                 history=history,
                 stream=True,
-            ):
+            )
+            async for chunk in stream_generator:
                 if isinstance(chunk, str):
                     yield json.dumps({"type": "token", "data": chunk}) + "\n"
 
@@ -110,13 +111,14 @@ class RAGPipeline:
     ) -> dict | AsyncGenerator[str, None]:
         if stream:
             async def generate():
-                async for chunk in self.ollama.chat_with_context(
+                stream_generator = await self.ollama.chat_with_context(
                     system_prompt=SYSTEM_PROMPT,
                     user_message=question,
                     context=None,
                     history=history,
                     stream=True,
-                ):
+                )
+                async for chunk in stream_generator:
                     if isinstance(chunk, str):
                         yield json.dumps({"type": "token", "data": chunk}) + "\n"
                 yield json.dumps({"type": "done", "data": True}) + "\n"

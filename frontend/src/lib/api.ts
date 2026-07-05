@@ -65,14 +65,24 @@ api.interceptors.response.use(
           { withCredentials: true },
         );
         const { access_token } = response.data;
+
+        // If refresh returned null (e.g. backend restarted and lost in-memory tokens),
+        // treat it as a real auth failure — clear state, ProtectedRoute handles redirect.
+        if (!access_token) {
+          processQueue(new Error('Session expired'), null);
+          useAuthStore.getState().clearAuth();
+          return Promise.reject(new Error('Session expired — please log in again.'));
+        }
+
         useAuthStore.getState().setAccessToken(access_token);
         processQueue(null, access_token);
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        // Clear auth state — ProtectedRoute will redirect to /auth/login
+        // without a full page reload that would re-trigger this loop.
         useAuthStore.getState().clearAuth();
-        window.location.href = '/auth/login';
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

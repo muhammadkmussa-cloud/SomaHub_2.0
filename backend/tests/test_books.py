@@ -158,3 +158,29 @@ async def test_search_books(async_client, test_librarian, librarian_headers):
     )
     assert response.status_code == 200
     assert any(b["title"] == "UniqueSearchTitle" for b in response.json())
+
+
+@pytest.mark.asyncio
+async def test_physical_inventory_only(async_client, test_librarian, librarian_headers):
+    """Verify that physical books track only physical inventory attributes and contain no digital files/paths."""
+    payload = {
+        "title": "Strictly Physical Book",
+        "author": "Physical Author",
+        "isbn": "9781234567890",
+        "category": "Science",
+        "total_copies": 2,
+    }
+    response = await async_client.post(
+        "/api/v1/books", json=payload, headers=librarian_headers
+    )
+    assert response.status_code == 200
+    data = response.json()
+    
+    assert "total_copies" in data
+    assert "available_copies" in data
+    
+    # Assert absolutely no digital book files are stored/referenced on physical books
+    assert "file_url" not in data
+    assert "file_path" not in data
+    assert "download_url" not in data
+    assert "reading_url" not in data

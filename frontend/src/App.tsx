@@ -28,6 +28,7 @@ const EbookDetailPage     = lazy(() => import('./pages/dashboard/EbookDetailPage
 const AnalyticsPage       = lazy(() => import('./pages/dashboard/AnalyticsPage'));
 const TenantsPage         = lazy(() => import('./pages/dashboard/TenantsPage'));
 const AdminPage           = lazy(() => import('./pages/dashboard/AdminPage'));
+const BookReaderPage      = lazy(() => import('./pages/dashboard/BookReaderPage'));
 
 const STAFF_ROLES: UserRole[] = ['library_admin', 'librarian'];
 const ADMIN_ROLES: UserRole[] = ['library_admin', 'super_admin'];
@@ -100,10 +101,14 @@ export default function App() {
                   <Route path="/dashboard/fines" element={<FinesPage />} />
                 </Route>
 
-                <Route element={<ProtectedRoute allowedRoles={['reader', 'library_admin', 'super_admin']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['reader', 'super_admin']} />}>
                   <Route path="/dashboard/bookstore" element={<BookstorePage />} />
-                  <Route path="/dashboard/my-library" element={<MyLibraryPage />} />
                   <Route path="/dashboard/bookstore/:ebookId" element={<EbookDetailPage />} />
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={['reader']} />}>
+                  <Route path="/dashboard/my-library" element={<MyLibraryPage />} />
+                  <Route path="/dashboard/my-library/read/:ebookId" element={<BookReaderPage />} />
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRoles={ADMIN_ROLES} />}>

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ebooksApi } from '../../lib/ebooks';
 import { readerApi } from '../../lib/reader';
+import { useAuthStore } from '../../stores/authStore';
 import { Button, Card } from '../../components/ui';
 import { EmptyState, ErrorState, LoadingState, PageHeader } from './phase2Helpers';
 
@@ -10,6 +11,9 @@ export default function EbookDetailPage() {
   const { ebookId = '' } = useParams();
   const queryClient = useQueryClient();
   const [review, setReview] = useState({ rating: 5, comment: '' });
+
+  const { user } = useAuthStore();
+  const isSuperAdmin = user?.role === 'super_admin';
 
   const ebookQuery = useQuery({
     queryKey: ['ebook', ebookId],
@@ -19,7 +23,7 @@ export default function EbookDetailPage() {
   const ownedQuery = useQuery({
     queryKey: ['ebook-owned', ebookId],
     queryFn: () => readerApi.checkOwned(ebookId),
-    enabled: !!ebookId,
+    enabled: !!ebookId && !isSuperAdmin,
   });
   const reviewsQuery = useQuery({
     queryKey: ['ebook-reviews', ebookId],
@@ -60,28 +64,33 @@ export default function EbookDetailPage() {
 
       <Card className="space-y-4">
         {ebook.description && <p className="text-obsidian-600">{ebook.description}</p>}
-        <div className="flex flex-wrap gap-2">
-          {!owned && ebook.price === 0 && (
-            <Button loading={checkout.isPending} onClick={() => checkout.mutate()}>
-              Add to library
-            </Button>
-          )}
-          {owned && (
-            <>
-              <Button variant="secondary" onClick={() => saveProgress.mutate(50)}>
-                Save 50% progress
+        {!isSuperAdmin && (
+          <div className="flex flex-wrap gap-2">
+            {!owned && ebook.price === 0 && (
+              <Button loading={checkout.isPending} onClick={() => checkout.mutate()}>
+                Add to library
               </Button>
-              <Button variant="outline" loading={favorite.isPending} onClick={() => favorite.mutate()}>
-                Add to favorites
-              </Button>
-            </>
-          )}
-        </div>
+            )}
+            {owned && (
+              <>
+                <Link to={`/dashboard/my-library/read/${ebookId}`}>
+                  <Button variant="primary">Read Book</Button>
+                </Link>
+                <Button variant="secondary" onClick={() => saveProgress.mutate(50)}>
+                  Save 50% progress
+                </Button>
+                <Button variant="outline" loading={favorite.isPending} onClick={() => favorite.mutate()}>
+                  Add to favorites
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </Card>
 
       <Card>
         <h2 className="font-display font-semibold text-obsidian-800 mb-3">Reviews</h2>
-        {owned && (
+        {!isSuperAdmin && owned && (
           <form
             className="space-y-2 mb-4"
             onSubmit={(e) => {

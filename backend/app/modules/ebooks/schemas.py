@@ -13,6 +13,7 @@ class EbookCreate(BaseModel):
     price: float = Field(0.00, ge=0.0)
     cover_url: Optional[str] = None
     file_url: Optional[str] = None
+    content: Optional[str] = None
     status: str = Field("draft", pattern="^(draft|published|archived)$")
 
 
@@ -24,6 +25,7 @@ class EbookUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0.0)
     cover_url: Optional[str] = None
     file_url: Optional[str] = None
+    content: Optional[str] = None
     status: Optional[str] = Field(None, pattern="^(draft|published|archived)$")
 
 
@@ -36,6 +38,7 @@ class EbookResponse(BaseModel):
     price: float
     cover_url: Optional[str] = None
     file_url: Optional[str] = None
+    content: Optional[str] = None
     status: str
     created_at: datetime
     updated_at: datetime

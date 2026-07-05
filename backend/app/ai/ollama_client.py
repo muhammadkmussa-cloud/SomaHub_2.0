@@ -48,6 +48,8 @@ class OllamaClient:
                         try:
                             data = json.loads(line)
                             chunk = data.get("response", "")
+                            if not chunk and "message" in data:
+                                chunk = data["message"].get("content", "")
                             if chunk:
                                 yield chunk
                             if data.get("done"):

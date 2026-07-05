@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 15
     EMAIL_VERIFY_TOKEN_EXPIRE_HOURS: int = 24
-    AUTH_RATE_LIMIT: int = 10
+    AUTH_RATE_LIMIT: int = 100
     AUTH_RATE_WINDOW_SECONDS: int = 60
 
     # ── Database ──────────────────────────────────────────────────────

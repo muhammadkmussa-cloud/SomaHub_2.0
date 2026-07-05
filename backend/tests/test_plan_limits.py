@@ -33,21 +33,29 @@ async def test_book_limit_enforced(
 
 
 @pytest.mark.asyncio
-async def test_ebook_limit_enforced(async_client, librarian_headers, monkeypatch):
+async def test_ebook_limit_enforced(async_client, test_super_admin, test_tenant, monkeypatch):
     """POST /api/v1/ebooks → 402 when tenant exceeds plan ebook limit."""
+    from app.core.security import create_access_token
     monkeypatch.setitem(subscription_module.PLAN_LIMITS["starter"], "max_ebooks", 1)
+
+    token = create_access_token(
+        subject=str(test_super_admin.id),
+        role=test_super_admin.role,
+        tenant_id=str(test_tenant.id),
+    )
+    headers = {"Authorization": f"Bearer {token}"}
 
     first = await async_client.post(
         "/api/v1/ebooks",
         json={"title": "Ebook One", "author": "Author", "price": 0},
-        headers=librarian_headers,
+        headers=headers,
     )
     assert first.status_code == 201
 
     second = await async_client.post(
         "/api/v1/ebooks",
         json={"title": "Ebook Two", "author": "Author", "price": 0},
-        headers=librarian_headers,
+        headers=headers,
     )
     assert second.status_code == 402
     assert "Ebook limit reached" in second.json()["message"]

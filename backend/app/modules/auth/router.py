@@ -123,10 +123,12 @@ async def refresh_from_cookie(
     response: Response,
     session: AsyncSession = Depends(get_db),
 ):
-    """Refresh using the HTTP-only cookie (preferred). Returns null token if no valid cookie."""
+    """Refresh using the HTTP-only cookie (preferred). Returns 401 if no valid cookie."""
+    from fastapi import HTTPException as _HTTPException
+
     token = request.cookies.get(REFRESH_COOKIE_KEY, "")
     if not token:
-        return {"access_token": None, "token_type": "bearer"}
+        raise _HTTPException(status_code=401, detail="No refresh token cookie found.")
 
     service = AuthService(session)
     try:
@@ -135,7 +137,7 @@ async def refresh_from_cookie(
         return token_response
     except Exception:
         _clear_refresh_cookie(response)
-        return {"access_token": None, "token_type": "bearer"}
+        raise _HTTPException(status_code=401, detail="Session expired. Please log in again.")
 
 
 # ── Logout ────────────────────────────────────────────────────────────────────

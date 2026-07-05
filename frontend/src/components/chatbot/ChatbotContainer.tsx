@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Bot } from 'lucide-react';
 import { ChatbotPanel } from './ChatbotPanel';
 import { cn } from '../ui';
 
 export function ChatbotContainer() {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  if (location.pathname.includes('/read/')) {
+    return null;
+  }
 
   const toggleOpen = () => {
     setIsOpen((v) => !v);

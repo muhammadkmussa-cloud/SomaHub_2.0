@@ -8,10 +8,36 @@ interface ChatbotMessageProps {
   isTyping?: boolean;
 }
 
+function renderInlineMarkdown(text: string) {
+  const regex = /(\*\*.*?\*\*|`.*?`)/g;
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={index} className="font-semibold text-obsidian-900 dark:text-white">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code
+          key={index}
+          className="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-xs font-mono text-emerald-600 dark:text-emerald-400"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
 function SimpleMarkdown({ content }: { content: string }) {
   const lines = content.split('\n');
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {lines.map((line, i) => {
         if (!line.trim()) return <br key={i} />;
 
@@ -21,31 +47,46 @@ function SimpleMarkdown({ content }: { content: string }) {
           const sizes = { 1: 'text-lg', 2: 'text-base', 3: 'text-sm' };
           return (
             <p key={i} className={cn('font-semibold', sizes[level as keyof typeof sizes] || 'text-sm')}>
-              {text}
+              {renderInlineMarkdown(text)}
             </p>
           );
         }
 
-        if (/^- /.test(line) || /^\d+\. /.test(line)) {
+        if (/^- /.test(line)) {
+          const text = line.replace(/^- /, '');
           return (
-            <p key={i} className="pl-3 text-sm">
-              {line}
-            </p>
+            <div key={i} className="flex items-start gap-1.5 pl-3 text-sm leading-relaxed">
+              <span className="select-none text-obsidian-400">•</span>
+              <span>{renderInlineMarkdown(text)}</span>
+            </div>
           );
+        }
+
+        if (/^\d+\. /.test(line)) {
+          const match = line.match(/^(\d+)\.\s(.*)/);
+          if (match) {
+            const num = match[1];
+            const text = match[2];
+            return (
+              <div key={i} className="flex items-start gap-1.5 pl-3 text-sm leading-relaxed">
+                <span className="select-none text-obsidian-400">{num}.</span>
+                <span>{renderInlineMarkdown(text)}</span>
+              </div>
+            );
+          }
         }
 
         if (/^\*\*.+\*\*$/.test(line.trim())) {
           return (
             <p key={i} className="font-semibold text-sm">
-              {line.trim().replace(/\*\*/g, '')}
+              {renderInlineMarkdown(line.trim())}
             </p>
           );
         }
 
         return (
-          <p key={i} className="text-sm leading-relaxed">
-            {line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-              .replace(/`(.+?)`/g, '<code class="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-xs font-mono">$1</code>')}
+          <p key={i} className="text-sm leading-relaxed text-obsidian-700 dark:text-obsidian-200">
+            {renderInlineMarkdown(line)}
           </p>
         );
       })}

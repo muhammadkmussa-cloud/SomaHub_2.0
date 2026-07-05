@@ -16,6 +16,7 @@ import {
   Headphones,
   X,
   Maximize2,
+  Minimize2,
   ZoomIn,
   ZoomOut,
   Loader2,
@@ -183,6 +184,35 @@ export default function BookReaderPage() {
 
   // ── View mode (pdf = real PDF | book = serif text mode) ────────────────────
   const [viewMode, setViewMode] = useState<'pdf' | 'book'>('pdf');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isImmersive, setIsImmersive] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isCurrentlyFullscreen);
+      if (!isCurrentlyFullscreen) {
+        setIsImmersive(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 
   // Switch to pdf mode by default once we know if a PDF exists
   useEffect(() => {
@@ -208,6 +238,7 @@ export default function BookReaderPage() {
 
   // ── Container ref for responsive PDF width ─────────────────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
+  const readerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
@@ -282,10 +313,82 @@ export default function BookReaderPage() {
     else speakPage();
   };
 
+  // ── Keyboard Navigation ────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'SELECT' ||
+        document.activeElement?.tagName === 'TEXTAREA'
+      ) {
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        setCurrentPage((prev) => Math.min(totalSpreads, prev + 1));
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentPage((prev) => Math.max(1, prev - 1));
+      } else if (e.key === 'Escape') {
+        setIsImmersive(false);
+        const isNativeFs = !!(
+          document.fullscreenElement ||
+          (document as any).webkitFullscreenElement ||
+          (document as any).mozFullScreenElement ||
+          (document as any).msFullscreenElement
+        );
+        if (isNativeFs) {
+          if (document.exitFullscreen) {
+            void document.exitFullscreen();
+          } else if ((document as any).webkitExitFullscreen) {
+            void (document as any).webkitExitFullscreen();
+          } else if ((document as any).mozCancelFullScreen) {
+            void (document as any).mozCancelFullScreen();
+          } else if ((document as any).msExitFullscreen) {
+            void (document as any).msExitFullscreen();
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [totalSpreads]);
+
   // ── Fullscreen ─────────────────────────────────────────────────────────────
   const toggleFullScreen = () => {
-    if (!document.fullscreenElement) void document.documentElement.requestFullscreen();
-    else void document.exitFullscreen();
+    const elem = readerRef.current;
+    const doc = document as any;
+    if (!elem) return;
+
+    if (!isImmersive) {
+      setIsImmersive(true);
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch((err) => console.warn("Fullscreen request failed:", err));
+      } else if ((elem as any).webkitRequestFullscreen) {
+        (elem as any).webkitRequestFullscreen();
+      } else if ((elem as any).mozRequestFullScreen) {
+        (elem as any).mozRequestFullScreen();
+      } else if ((elem as any).msRequestFullscreen) {
+        (elem as any).msRequestFullscreen();
+      }
+    } else {
+      setIsImmersive(false);
+      const isNativeFs = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+      if (isNativeFs) {
+        if (document.exitFullscreen) {
+          void document.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          void doc.webkitExitFullscreen();
+        } else if (doc.mozCancelFullScreen) {
+          void doc.mozCancelFullScreen();
+        } else if (doc.msExitFullscreen) {
+          void doc.msExitFullscreen();
+        }
+      }
+    }
   };
 
   // ── Handle zoom with position preservation ─────────────────────────────────
@@ -325,53 +428,90 @@ export default function BookReaderPage() {
   const rightTextPage = doublePage ? textPages[(safeCurrentPage - 1) * 2 + 1] : null;
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col justify-between overflow-hidden select-none font-sans">
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="h-14 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between px-4 text-white shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link to="/dashboard/my-library" className="hover:text-emerald-400 transition-colors shrink-0">
-            <X size={20} />
-          </Link>
-          {coverUrl && (
-            <img src={coverUrl} alt={ebook.title} className="h-8 w-6 rounded object-cover shrink-0 border border-obsidian-700" />
-          )}
-          <div className="min-w-0">
-            <h1 className="text-sm font-semibold truncate max-w-[160px] sm:max-w-sm">{ebook.title}</h1>
-            <p className="text-xs text-obsidian-400 truncate">{ebook.author}</p>
-          </div>
-        </div>
-
-        {/* View mode toggle (only shown when PDF is available) */}
-        {hasPdf && (
-          <div className="flex bg-obsidian-800 rounded-lg p-0.5 border border-obsidian-700">
-            <button
-              onClick={() => { setViewMode('pdf'); setCurrentPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                viewMode === 'pdf' ? 'bg-emerald-600 text-white' : 'text-obsidian-400 hover:text-white'
-              }`}
-            >
-              <FileText size={14} />
-              PDF
-            </button>
-            <button
-              onClick={() => { setViewMode('book'); setCurrentPage(1); window.speechSynthesis.cancel(); setIsPlaying(false); }}
-              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                viewMode === 'book' ? 'bg-emerald-600 text-white' : 'text-obsidian-400 hover:text-white'
-              }`}
-            >
-              <BookOpen size={14} />
-              Text
-            </button>
-          </div>
-        )}
-
-        <button onClick={toggleFullScreen} className="text-obsidian-400 hover:text-white transition-colors shrink-0" title="Full Screen">
-          <Maximize2 size={18} />
+    <div ref={readerRef} className="fixed inset-0 bg-black z-50 flex flex-col justify-between overflow-hidden select-none font-sans">
+      {/* Immersive Floating Exit Button */}
+      {isImmersive && (
+        <button
+          onClick={toggleFullScreen}
+          className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-black/60 hover:bg-emerald-600/90 text-white flex items-center justify-center transition-all shadow-lg border border-white/10"
+          title="Exit Full Screen"
+        >
+          <Minimize2 size={18} />
         </button>
-      </header>
+      )}
+
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      {!isImmersive && (
+        <header className="h-14 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between px-4 text-white shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link to="/dashboard/my-library" className="hover:text-emerald-400 transition-colors shrink-0">
+              <X size={20} />
+            </Link>
+            {coverUrl && (
+              <img src={coverUrl} alt={ebook.title} className="h-8 w-6 rounded object-cover shrink-0 border border-obsidian-700" />
+            )}
+            <div className="min-w-0">
+              <h1 className="text-sm font-semibold truncate max-w-[160px] sm:max-w-sm">{ebook.title}</h1>
+              <p className="text-xs text-obsidian-400 truncate">{ebook.author}</p>
+            </div>
+          </div>
+
+          {/* View mode toggle (only shown when PDF is available) */}
+          {hasPdf && (
+            <div className="flex bg-obsidian-800 rounded-lg p-0.5 border border-obsidian-700">
+              <button
+                onClick={() => { setViewMode('pdf'); setCurrentPage(1); }}
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  viewMode === 'pdf' ? 'bg-emerald-600 text-white' : 'text-obsidian-400 hover:text-white'
+                }`}
+              >
+                <FileText size={14} />
+                PDF
+              </button>
+              <button
+                onClick={() => { setViewMode('book'); setCurrentPage(1); window.speechSynthesis.cancel(); setIsPlaying(false); }}
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  viewMode === 'book' ? 'bg-emerald-600 text-white' : 'text-obsidian-400 hover:text-white'
+                }`}
+              >
+                <BookOpen size={14} />
+                Text
+              </button>
+            </div>
+          )}
+
+          <button
+            onClick={toggleFullScreen}
+            className="text-obsidian-400 hover:text-white transition-colors shrink-0"
+            title={isImmersive ? "Exit Full Screen" : "Full Screen"}
+          >
+            {isImmersive ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          </button>
+        </header>
+      )}
 
       {/* ── Main canvas ─────────────────────────────────────────────────────── */}
-      <main ref={containerRef} className="flex-1 relative flex items-center justify-center overflow-auto bg-obsidian-950 p-4 sm:p-6">
+      <main ref={containerRef} className="flex-1 relative flex items-center justify-center overflow-auto bg-obsidian-950 p-4 sm:p-6 group">
+        
+        {/* Floating Canvas Navigation Arrows */}
+        {safeCurrentPage > 1 && (
+          <button
+            onClick={() => goTo(safeCurrentPage - 1)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/40 hover:bg-emerald-600/90 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 hidden md:flex cursor-pointer"
+            title="Previous Page"
+          >
+            <ChevronLeft size={24} />
+          </button>
+        )}
+        {safeCurrentPage < totalSpreads && (
+          <button
+            onClick={() => goTo(safeCurrentPage + 1)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/40 hover:bg-emerald-600/90 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 hidden md:flex cursor-pointer"
+            title="Next Page"
+          >
+            <ChevronRight size={24} />
+          </button>
+        )}
 
         {/* ── PDF VIEW MODE ─────────────────────────────────────────────────── */}
         {viewMode === 'pdf' && pdfUrl && (
@@ -488,7 +628,8 @@ export default function BookReaderPage() {
       </main>
 
       {/* ── Footer controls ──────────────────────────────────────────────────── */}
-      <footer className="bg-obsidian-900 border-t border-obsidian-800 text-white flex flex-col gap-2 p-3 sm:px-6 shrink-0">
+      {!isImmersive && (
+        <footer className="bg-obsidian-900 border-t border-obsidian-800 text-white flex flex-col gap-2 p-3 sm:px-6 shrink-0">
 
         {/* TTS row – active in book mode, dimmed in PDF mode */}
         <div className={`flex flex-wrap items-center justify-between gap-4 border-b border-obsidian-850 pb-2 transition-opacity ${viewMode === 'pdf' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
@@ -550,7 +691,7 @@ export default function BookReaderPage() {
             className="flex-1 accent-emerald-500 h-1.5 bg-obsidian-800 rounded-lg cursor-pointer appearance-none"
           />
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 pr-16 md:pr-0">
             {/* Zoom */}
             <div className="flex items-center gap-1 bg-obsidian-800 rounded border border-obsidian-750 px-1 py-0.5">
               <button
@@ -606,7 +747,8 @@ export default function BookReaderPage() {
             </button>
           </div>
         </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

@@ -32,6 +32,8 @@ class Ebook(Base):
     price: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00, nullable=False)
     cover_url: Mapped[Optional[str]] = mapped_column(Text)
     file_url: Mapped[Optional[str]] = mapped_column(Text)
+    # Structured text extracted from the uploaded PDF (markdown-like, ## headings + paragraphs)
+    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
         String(50), default="draft", nullable=False, index=True
     )
