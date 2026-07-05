@@ -59,6 +59,7 @@ const cleanTextForTTS = (text: string): string => {
   return text
     .replace(/#{1,6}\s+/g, '')
     .replace(/>\s+/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '') // strip image markdown
     .replace(/(\*\*\*|\*\*|\*|___|__|_) /g, ' ')
     .replace(/(\*\*\*|\*\*|\*|___|__|_)/g, '')
     .replace(/^\s*[-*•]\s+/gm, '')
@@ -66,23 +67,40 @@ const cleanTextForTTS = (text: string): string => {
     .trim();
 };
 
+const IMAGE_RE = /^!\[.*?\]\(.*?\)/;
+
 const partitionText = (fullText: string, charLimit: number): string[] => {
   const lines = fullText.split('\n');
   const pages: string[] = [];
   let currentLines: string[] = [];
   let len = 0;
   for (const line of lines) {
-    if (len + line.length + 1 > charLimit && currentLines.length > 0) {
+    const isImage = IMAGE_RE.test(line.trim());
+    // Images consume a full page worth of space
+    const weight = isImage ? charLimit : line.length;
+
+    if (isImage && currentLines.length > 0) {
+      // Flush current text as its own page, then put image on its own page
+      pages.push(currentLines.join('\n'));
+      pages.push(line);
+      currentLines = [];
+      len = 0;
+    } else if (isImage && currentLines.length === 0) {
+      // Image at start — give it its own page
+      pages.push(line);
+      len = 0;
+    } else if (len + weight + 1 > charLimit && currentLines.length > 0) {
       pages.push(currentLines.join('\n'));
       currentLines = [line];
-      len = line.length;
+      len = weight;
     } else {
       currentLines.push(line);
-      len += line.length + 1;
+      len += weight + 1;
     }
   }
   if (currentLines.length > 0) pages.push(currentLines.join('\n'));
-  return pages;
+  // Filter out pages that are entirely empty whitespace
+  return pages.filter(p => p.trim().length > 0);
 };
 
 function renderInlineMarkdown(text: string): React.ReactNode {
@@ -104,9 +122,11 @@ function renderInlineMarkdown(text: string): React.ReactNode {
 
 function BookPageContent({ text, zoomLevel }: { text: string; zoomLevel: number }) {
   const lines = text.split('\n');
+  const nonEmptyLines = lines.filter(l => l.trim());
+  const isImageOnly = nonEmptyLines.length === 1 && IMAGE_RE.test(nonEmptyLines[0].trim());
   return (
     <div
-      className="flex-1 overflow-y-auto leading-relaxed pr-1"
+      className={`flex-1 overflow-y-auto leading-relaxed pr-1 ${isImageOnly ? 'flex flex-col items-center justify-center' : ''}`}
       style={{ fontSize: `${zoomLevel * 1.125}rem`, lineHeight: '1.6' }}
     >
       {lines.map((line, index) => {
@@ -152,6 +172,50 @@ function BookPageContent({ text, zoomLevel }: { text: string; zoomLevel: number 
             <div key={index} className={`flex items-start gap-2 py-0.5 my-1 text-left ${paddingClass}`}>
               <span className="select-none text-[#a49162] font-semibold min-w-[14px]">{displayMarker}</span>
               <span className="flex-1">{renderInlineMarkdown(content)}</span>
+            </div>
+          );
+        }
+
+        // 3.5. Images / Charts / Graphs / Diagrams
+        const imageMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)/);
+        if (imageMatch) {
+          const altText = imageMatch[1];
+          const src = imageMatch[2];
+          const resolvedSrc = resolveUploadUrl(src) || src;
+          const isChart = altText.toLowerCase().includes('chart') || 
+                          altText.toLowerCase().includes('diagram') || 
+                          altText.toLowerCase().includes('graph') ||
+                          altText.toLowerCase().includes('data');
+          
+          return (
+            <div key={index} className={`flex flex-col items-center justify-center rounded-xl overflow-hidden ${isImageOnly ? 'my-0 w-full h-full' : 'my-3'}`}>
+              {/* Badge row */}
+              <div className="w-full flex items-center gap-2 mb-2 shrink-0">
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest select-none border ${
+                  isChart
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    isChart ? 'bg-emerald-500' : 'bg-amber-500'
+                  }`} />
+                  {isChart ? 'Chart / Diagram' : 'Figure'}
+                </div>
+                {altText && (
+                  <span className="text-[10px] text-[#8c7b50] italic truncate">
+                    {altText}
+                  </span>
+                )}
+              </div>
+              {/* Image container */}
+              <div className={`w-full flex items-center justify-center bg-white rounded-lg border border-[#e0cf9b]/60 shadow-sm ${isImageOnly ? 'flex-1 p-3' : 'p-2'}`}>
+                <img
+                  src={resolvedSrc}
+                  alt={altText}
+                  className={`max-w-full rounded object-contain ${isImageOnly ? 'max-h-[420px]' : 'max-h-[240px]'}`}
+                  loading="lazy"
+                />
+              </div>
             </div>
           );
         }

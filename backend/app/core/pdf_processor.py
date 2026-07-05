@@ -16,6 +16,11 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+try:
+    import fitz
+except ImportError:
+    fitz = None
+
 # ── Regex Patterns ──────────────────────────────────────────────────────────
 # Matches bullet characters. Asterisk '*' is only matched if followed by space to avoid matching markdown italic starts.
 BULLET_RE = re.compile(
@@ -188,6 +193,138 @@ def _spans_to_text_and_meta(spans: list) -> tuple[str, float, bool]:
     return joined_text, avg_size, has_bold
 
 
+def _is_bbox_inside_any_visual(bbox, visuals) -> bool:
+    if not fitz:
+        return False
+    b_rect = fitz.Rect(bbox)
+    b_area = b_rect.width * b_rect.height
+    if b_area <= 0:
+        return False
+    for v in visuals:
+        v_rect = v["rect"]
+        intersect = b_rect & v_rect
+        if not intersect.is_empty:
+            intersect_area = intersect.width * intersect.height
+            if intersect_area > b_area * 0.5:
+                return True
+    return False
+
+
+def _extract_visuals_from_page(
+    page, doc, page_num: int, media_dir: Path, ebook_prefix: str, url_prefix: str
+) -> list[dict]:
+    """
+    Extract raster images and vector drawing clusters (charts/graphs/diagrams)
+    from a page and save them. Returns metadata list.
+
+    Args:
+        page: PyMuPDF page object.
+        doc: PyMuPDF document object.
+        page_num: Zero-based page index.
+        media_dir: Local filesystem directory where images are saved.
+        ebook_prefix: Unique prefix per ebook (e.g. hex of ebook UUID) to avoid filename collisions.
+        url_prefix: URL directory prefix for generated image URLs (e.g. "/uploads/ebooks/media").
+    """
+    visuals = []
+    if not fitz:
+        return visuals
+
+    # 1. Raster images
+    try:
+        images_info = page.get_images(full=True)
+    except Exception:
+        images_info = []
+
+    for img_info in images_info:
+        xref = img_info[0]
+        rects = page.get_image_rects(xref)
+        if not rects:
+            continue
+        rect = rects[0]
+
+        try:
+            base_image = doc.extract_image(xref)
+            img_bytes = base_image["image"]
+            ext = base_image["ext"]
+            filename = f"{ebook_prefix}_img_p{page_num}_{xref}.{ext}"
+            file_path = media_dir / filename
+            file_path.write_bytes(img_bytes)
+            url = f"{url_prefix}/{filename}"
+            visuals.append({
+                "type": "image",
+                "rect": rect,
+                "url": url,
+                "alt": f"Image on Page {page_num + 1}"
+            })
+        except Exception as e:
+            logger.warning("Failed to extract raster image on page %d (xref %d): %s", page_num, xref, e)
+
+    # 2. Vector drawings (graphs, charts, diagrams)
+    try:
+        drawings = page.get_drawings()
+    except Exception:
+        drawings = []
+
+    drawing_rects = []
+    page_width = page.rect.width
+    page_height = page.rect.height
+
+    for path in drawings:
+        p_rect = path.get("rect")
+        if not p_rect or p_rect.is_empty:
+            continue
+        # Skip full page background rects
+        if p_rect.width > page_width * 0.95 and p_rect.height > page_height * 0.95:
+            continue
+        # Skip full width thin horizontal separators
+        if p_rect.width > page_width * 0.8 and p_rect.height < 3:
+            continue
+        drawing_rects.append(p_rect)
+
+    # Cluster overlapping/nearby rectangles
+    clusters = []
+    for r in drawing_rects:
+        merged = False
+        for i, cluster in enumerate(clusters):
+            # Dilate cluster manually by 15 points to merge close-by elements
+            dilated = fitz.Rect(cluster.x0 - 15, cluster.y0 - 15, cluster.x1 + 15, cluster.y1 + 15)
+            if dilated.intersects(r):
+                clusters[i] = cluster | r
+                merged = True
+                break
+        if not merged:
+            clusters.append(r)
+
+    # Render each substantial cluster as a chart image
+    chart_idx = 1
+    for cluster in clusters:
+        # Constrain to page boundaries
+        cluster = cluster & page.rect
+        # Filter out page borders that encompass almost the entire page
+        if cluster.width > page_width * 0.9 and cluster.height > page_height * 0.9:
+            continue
+        if cluster.width > 50 and cluster.height > 50:
+            try:
+                # 2x zoom render for clear charts/graphs
+                pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0), clip=cluster)
+                filename = f"{ebook_prefix}_chart_p{page_num}_{chart_idx}.png"
+                file_path = media_dir / filename
+                pix.save(str(file_path))
+                
+                url = f"{url_prefix}/{filename}"
+                visuals.append({
+                    "type": "chart",
+                    "rect": cluster,
+                    "url": url,
+                    "alt": f"Chart/Diagram {chart_idx} on Page {page_num + 1}"
+                })
+                chart_idx += 1
+            except Exception as e:
+                logger.warning("Failed to render chart cluster on page %d: %s", page_num, e)
+
+    return visuals
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def extract_structured_text(
@@ -292,16 +429,61 @@ def extract_structured_text(
         flush_blockquote()
         flush_list_item()
 
-    for page in doc:
+    # Ensure media directory exists and derive a unique prefix per ebook
+    media_dir = Path("uploads/ebooks/media")
+    media_dir.mkdir(parents=True, exist_ok=True)
+    # Use the PDF filename stem (UUID hex from storage) as unique prefix
+    ebook_prefix = path.stem
+    url_prefix = "/uploads/ebooks/media"
+
+    for page_num, page in enumerate(doc):
         page_height = page.rect.height
         y_top_limit = page_height * 0.08
         y_bottom_limit = page_height * 0.92
         
+        # Get visual elements (images, charts, diagrams)
+        visuals = _extract_visuals_from_page(
+            page, doc, page_num, media_dir, ebook_prefix, url_prefix
+        )
+        
+        # Get text blocks
         blocks = page.get_text("dict", sort=True).get("blocks", [])
-
+        
+        # Merge text blocks and visuals
+        items = []
         for block in blocks:
-            if block.get("type") != 0:
+            if block.get("type") == 0:
+                bbox = block.get("bbox", (0, 0, 0, 0))
+                if _is_bbox_inside_any_visual(bbox, visuals):
+                    continue
+                items.append({
+                    "type": "text",
+                    "y": bbox[1],
+                    "x": bbox[0],
+                    "data": block
+                })
+        for v in visuals:
+            rect = v["rect"]
+            items.append({
+                "type": "visual",
+                "y": rect.y0,
+                "x": rect.x0,
+                "data": v
+            })
+            
+        # Sort items by y-coordinate, then x-coordinate to handle columns/side-by-side elements
+        items.sort(key=lambda item: (item["y"], item["x"]))
+
+        for item in items:
+            if item["type"] == "visual":
+                flush_all()
+                v = item["data"]
+                output.append(f"\n![{v['alt']}]({v['url']})\n")
+                in_list = False
+                block_is_blockquote = None
                 continue
+
+            block = item["data"]
 
             # Reset block state at block boundary
             in_list = False
@@ -476,6 +658,6 @@ def extract_structured_text(
 
     full = "\n".join(cleaned_lines)
     full = re.sub(r"\n{3,}", "\n\n", full)
-    full = "\n".join(l if l.strip() else "" for l in full.splitlines())
+    full = "\n".join(line if line.strip() else "" for line in full.splitlines())
 
     return full.strip() or None
