@@ -32,6 +32,52 @@ async def upload_file(file: UploadFile, folder: str = "general") -> str:
         return await _upload_local(file, folder, filename)
 
 
+async def upload_bytes(content: bytes, filename: str, folder: str = "general") -> str:
+    """Upload raw bytes and return the URL. Delegates to the configured provider."""
+    provider = settings.STORAGE_PROVIDER
+
+    if provider == "s3":
+        import boto3
+        bucket = _s3_bucket_for(folder)
+        key = f"{folder}/{filename}"
+        session = boto3.Session(
+            aws_access_key_id=settings.S3_ACCESS_KEY,
+            aws_secret_access_key=settings.S3_SECRET_KEY,
+            region_name=settings.S3_REGION,
+        )
+        client = session.client("s3", endpoint_url=settings.S3_ENDPOINT or None)
+        client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=content,
+            ContentType="image/png" if filename.endswith(".png") else "application/octet-stream",
+        )
+        if settings.S3_ENDPOINT:
+            return f"{settings.S3_ENDPOINT}/{bucket}/{key}"
+        return f"https://{bucket}.s3.{settings.S3_REGION}.amazonaws.com/{key}"
+    elif provider == "supabase":
+        import httpx
+        bucket = _supabase_bucket_for(folder)
+        url = f"{settings.SUPABASE_URL}/storage/v1/object/{bucket}/{filename}"
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+                    "Content-Type": "image/png" if filename.endswith(".png") else "application/octet-stream",
+                },
+                content=content,
+            )
+            resp.raise_for_status()
+        return f"{settings.SUPABASE_URL}/storage/v1/object/public/{bucket}/{filename}"
+    else:
+        dir_path = UPLOAD_DIR / folder
+        dir_path.mkdir(parents=True, exist_ok=True)
+        file_path = dir_path / filename
+        file_path.write_bytes(content)
+        return f"/uploads/{folder}/{filename}"
+
+
 async def delete_file(url: str) -> None:
     """Delete a file by its URL. Delegates to the configured provider."""
     provider = settings.STORAGE_PROVIDER

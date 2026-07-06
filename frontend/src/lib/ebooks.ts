@@ -51,4 +51,12 @@ export const ebooksApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     })).data;
   },
+  getProgress: async (ebookId: string) =>
+    (await api.get<{ progress_percent: number; last_page: number }>(`/reading-progress/${ebookId}`)).data,
+  updateProgress: async (ebookId: string, progressPercent: number, lastPage: number) =>
+    (await api.post('/reading-progress', {
+      ebook_id: ebookId,
+      progress_percent: progressPercent,
+      last_page: lastPage,
+    })).data,
 };

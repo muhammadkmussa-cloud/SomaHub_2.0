@@ -243,6 +243,14 @@ export default function BookReaderPage() {
     enabled: !!ebookId,
   });
 
+  // ── Reading progress data ──────────────────────────────────────────────────
+  const { data: progressData } = useQuery({
+    queryKey: ['reading-progress', ebookId],
+    queryFn: () => ebooksApi.getProgress(ebookId),
+    enabled: !!ebookId,
+    retry: false,
+  });
+
   const pdfUrl = resolveUploadUrl(ebook?.file_url);
   const hasPdf = !!pdfUrl;
 
@@ -331,7 +339,6 @@ export default function BookReaderPage() {
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPdfPages(numPages);
-    setCurrentPage(1);
     setPdfLoaded(true);
     setPdfError(null);
   }, []);
@@ -349,6 +356,52 @@ export default function BookReaderPage() {
 
   const totalSpreads = viewMode === 'pdf' ? totalPdfSpreads : totalTextSpreads;
   const safeCurrentPage = Math.min(currentPage, Math.max(1, totalSpreads));
+
+  // ── Restore Reading Progress ───────────────────────────────────────────────
+  const hasRestoredProgress = useRef(false);
+
+  useEffect(() => {
+    if (!ebook || !progressData || hasRestoredProgress.current) return;
+
+    if (viewMode === 'pdf') {
+      if (pdfLoaded && numPdfPages > 0) {
+        const lastPage = progressData.last_page || 1;
+        const targetSpread = doublePage ? Math.floor((lastPage - 1) / 2) + 1 : lastPage;
+        const maxSpreads = doublePage ? Math.ceil(numPdfPages / 2) : numPdfPages;
+        setCurrentPage(Math.max(1, Math.min(maxSpreads, targetSpread)));
+        hasRestoredProgress.current = true;
+      }
+    } else {
+      if (textPages.length > 0) {
+        const lastPage = progressData.last_page || 1;
+        const targetSpread = doublePage ? Math.floor((lastPage - 1) / 2) + 1 : lastPage;
+        const maxSpreads = doublePage ? Math.ceil(textPages.length / 2) : textPages.length;
+        setCurrentPage(Math.max(1, Math.min(maxSpreads, targetSpread)));
+        hasRestoredProgress.current = true;
+      }
+    }
+  }, [ebook, progressData, viewMode, pdfLoaded, numPdfPages, textPages.length, doublePage]);
+
+  // ── Save Reading Progress ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!hasRestoredProgress.current || !ebookId) return;
+
+    const physPage = doublePage ? (safeCurrentPage - 1) * 2 + 1 : safeCurrentPage;
+    const totalPages = viewMode === 'pdf' ? numPdfPages : textPages.length;
+    if (totalPages <= 0) return;
+
+    const progressPercent = Math.min(100, Math.max(0, Math.round((physPage / totalPages) * 100)));
+
+    const timer = setTimeout(async () => {
+      try {
+        await ebooksApi.updateProgress(ebookId, progressPercent, physPage);
+      } catch (err) {
+        console.error('Failed to save reading progress:', err);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [safeCurrentPage, doublePage, viewMode, numPdfPages, textPages.length, ebookId]);
 
   // ── Navigation helpers ─────────────────────────────────────────────────────
   const goTo = (page: number) => setCurrentPage(Math.max(1, Math.min(totalSpreads, page)));
@@ -455,6 +508,34 @@ export default function BookReaderPage() {
     }
   };
 
+  // ── Smart View Transitions ────────────────────────────────────────────────
+  const handleViewModeChange = (newMode: 'pdf' | 'book') => {
+    const physPage = doublePage ? (safeCurrentPage - 1) * 2 + 1 : safeCurrentPage;
+    setViewMode(newMode);
+
+    if (newMode === 'pdf') {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+    }
+
+    const newTotalSpreads = newMode === 'pdf' ? totalPdfSpreads : totalTextSpreads;
+    const newSpread = doublePage ? Math.floor((physPage - 1) / 2) + 1 : physPage;
+    setCurrentPage(Math.max(1, Math.min(newTotalSpreads, newSpread)));
+  };
+
+  const handleDoublePageToggle = () => {
+    const physPage = doublePage ? (safeCurrentPage - 1) * 2 + 1 : safeCurrentPage;
+    const newDouble = !doublePage;
+    setDoublePage(newDouble);
+
+    const newTotal = viewMode === 'pdf'
+      ? (newDouble ? Math.ceil(numPdfPages / 2) : numPdfPages)
+      : (newDouble ? Math.ceil(textPages.length / 2) : textPages.length);
+
+    const newSpread = newDouble ? Math.floor((physPage - 1) / 2) + 1 : physPage;
+    setCurrentPage(Math.max(1, Math.min(newTotal, newSpread)));
+  };
+
   // ── Handle zoom with position preservation ─────────────────────────────────
   const handleZoomChange = (newZoom: number) => {
     const progress = (safeCurrentPage - 1) / Math.max(1, totalSpreads - 1);
@@ -524,7 +605,7 @@ export default function BookReaderPage() {
           {hasPdf && (
             <div className="flex bg-obsidian-800 rounded-lg p-0.5 border border-obsidian-700">
               <button
-                onClick={() => { setViewMode('pdf'); setCurrentPage(1); }}
+                onClick={() => handleViewModeChange('pdf')}
                 className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   viewMode === 'pdf' ? 'bg-emerald-600 text-white' : 'text-obsidian-400 hover:text-white'
                 }`}
@@ -533,7 +614,7 @@ export default function BookReaderPage() {
                 PDF
               </button>
               <button
-                onClick={() => { setViewMode('book'); setCurrentPage(1); window.speechSynthesis.cancel(); setIsPlaying(false); }}
+                onClick={() => handleViewModeChange('book')}
                 className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   viewMode === 'book' ? 'bg-emerald-600 text-white' : 'text-obsidian-400 hover:text-white'
                 }`}
@@ -555,7 +636,7 @@ export default function BookReaderPage() {
       )}
 
       {/* ── Main canvas ─────────────────────────────────────────────────────── */}
-      <main ref={containerRef} className="flex-1 relative flex items-center justify-center overflow-auto bg-obsidian-950 p-4 sm:p-6 group">
+      <main ref={containerRef} className="flex-1 relative flex overflow-auto bg-obsidian-950 p-4 sm:p-6 group">
         
         {/* Floating Canvas Navigation Arrows */}
         {safeCurrentPage > 1 && (
@@ -579,7 +660,7 @@ export default function BookReaderPage() {
 
         {/* ── PDF VIEW MODE ─────────────────────────────────────────────────── */}
         {viewMode === 'pdf' && pdfUrl && (
-          <div className="flex flex-col items-center w-full max-w-[1280px]">
+          <div className="mx-auto my-auto flex flex-col items-center w-full max-w-[1280px]">
             {pdfError && (
               <div className="flex flex-col items-center gap-3 text-red-400 py-16">
                 <AlertCircle size={40} className="opacity-60" />
@@ -658,10 +739,10 @@ export default function BookReaderPage() {
 
         {/* ── BOOK / TEXT VIEW MODE ─────────────────────────────────────────── */}
         {viewMode === 'book' && (
-          <div className="w-full max-w-5xl h-full flex items-center justify-center">
-            <div className="grid grid-cols-1 md:grid-cols-2 w-full h-[85vh] max-h-[680px] bg-[#fbf5e6] text-[#2c2214] font-serif rounded-lg shadow-2xl overflow-hidden relative border border-[#eadaab]">
+          <div className={`mx-auto my-auto w-full ${doublePage ? 'max-w-5xl' : 'max-w-xl'} h-full flex items-center justify-center`}>
+            <div className={`grid grid-cols-1 ${doublePage ? 'md:grid-cols-2' : ''} w-full h-[85vh] max-h-[680px] bg-[#fbf5e6] text-[#2c2214] font-serif rounded-lg shadow-2xl overflow-hidden relative border border-[#eadaab]`}>
               {/* Left page */}
-              <div className="flex flex-col justify-between p-6 sm:p-10 md:border-r border-[#e0cf9b] h-full relative">
+              <div className={`flex flex-col justify-between p-6 sm:p-10 ${doublePage ? 'md:border-r border-[#e0cf9b]' : ''} h-full relative`}>
                 <div className="flex justify-between text-[11px] text-[#8c7b50] italic border-b border-[#e2d5ab] pb-1.5 mb-4">
                   <span>{doublePage ? (safeCurrentPage - 1) * 2 + 1 : safeCurrentPage}</span>
                   <span>{ebook.title}</span>
@@ -676,8 +757,8 @@ export default function BookReaderPage() {
               {doublePage && (
                 <div className="hidden md:flex flex-col justify-between p-6 sm:p-10 h-full relative bg-[#FAF3E0]">
                   <div className="flex justify-between text-[11px] text-[#8c7b50] italic border-b border-[#e2d5ab] pb-1.5 mb-4">
-                    <span>CONTINUED</span>
-                    <span>{(safeCurrentPage - 1) * 2 + 2}</span>
+                     <span>CONTINUED</span>
+                     <span>{(safeCurrentPage - 1) * 2 + 2}</span>
                   </div>
                   <BookPageContent text={rightTextPage || ''} zoomLevel={zoomLevel} />
                   <div className="text-center text-xs text-[#8c7b50] font-semibold mt-4">
@@ -790,7 +871,7 @@ export default function BookReaderPage() {
 
             {/* Double-page toggle */}
             <button
-              onClick={() => { setDoublePage(!doublePage); setCurrentPage(1); }}
+              onClick={handleDoublePageToggle}
               className={`px-2 py-1 text-xs font-semibold rounded border transition-colors ${
                 doublePage
                   ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30'
