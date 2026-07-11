@@ -26,7 +26,8 @@ export function resolveUploadUrl(url: string | undefined | null): string | null 
 
 
 export const ebooksApi = {
-  list: async () => (await api.get<Ebook[]>('/ebooks')).data,
+  list: async (params?: { search?: string; category?: string; limit?: number }) =>
+    (await api.get<Ebook[]>('/ebooks', { params })).data,
   get: async (id: string) => (await api.get<Ebook>(`/ebooks/${id}`)).data,
   myLibrary: async () => (await api.get('/ebook-purchases/my-library')).data,
   checkoutFree: async (ebookId: string) =>

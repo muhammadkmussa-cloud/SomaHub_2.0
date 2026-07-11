@@ -158,3 +158,91 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ── Dark Mode Overrides ─────────────────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #020617; /* obsidian-950 */
+  color: #cbd5e1; /* obsidian-300 */
+}
+
+/* Backgrounds */
+.dark .bg-white,
+.dark .card,
+.dark .layout-sidebar {
+  background-color: #0f172a !important; /* obsidian-900 */
+}
+
+.dark .bg-obsidian-50,
+.dark .layout-main {
+  background-color: #020617 !important; /* obsidian-950 */
+}
+
+/* Borders */
+.dark .border-obsidian-100,
+.dark .border-obsidian-200,
+.dark .border-obsidian-800,
+.dark .border-b,
+.dark .border-t,
+.dark .border-r,
+.dark .border-l,
+.dark .border {
+  border-color: #1e293b !important; /* obsidian-800 */
+}
+
+/* Text Colors */
+.dark .text-obsidian-900,
+.dark .text-obsidian-800,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f8fafc !important; /* obsidian-50 */
+}
+
+.dark .text-obsidian-700,
+.dark .text-obsidian-600,
+.dark .text-obsidian-500 {
+  color: #cbd5e1 !important; /* obsidian-300 */
+}
+
+.dark .text-obsidian-400 {
+  color: #94a3b8 !important; /* obsidian-400 */
+}
+
+/* Form Elements */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important; /* obsidian-900 */
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.dark input[type="text"]:focus,
+.dark input[type="email"]:focus,
+.dark input[type="password"]:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #10b981 !important; /* emerald-500 */
+}
+
+/* Interactive & Hover States */
+.dark .hover\:bg-obsidian-50:hover {
+  background-color: #1e293b !important;
+}
+.dark .hover\:bg-obsidian-100:hover {
+  background-color: #1e293b !important;
+}
+
+/* Settings tab button state */
+.dark .text-obsidian-500:hover {
+  color: #f8fafc !important;
+}

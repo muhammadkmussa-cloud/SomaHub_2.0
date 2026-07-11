@@ -30,10 +30,11 @@ _bearer = HTTPBearer(auto_error=False)
 
 # ── Token payload model (lightweight — not a DB call) ─────────────────────────
 class TokenPayload:
-    def __init__(self, sub: str, role: str, tenant_id: str | None):
+    def __init__(self, sub: str, role: str, tenant_id: str | None, session_id: str | None = None):
         self.user_id = sub
         self.role = role
         self.tenant_id = tenant_id
+        self.session_id = session_id
 
 
 # ── Current user dependency ───────────────────────────────────────────────────
@@ -71,6 +72,7 @@ async def get_current_user(
         sub=payload["sub"],
         role=payload.get("role", "reader"),
         tenant_id=tenant_id_str,
+        session_id=payload.get("session_id"),
     )
 
 

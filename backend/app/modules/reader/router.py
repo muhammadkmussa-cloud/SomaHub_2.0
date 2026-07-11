@@ -8,7 +8,7 @@ from app.modules.bookmarks.schemas import BookmarkCreate
 from app.modules.bookmarks.service import BookmarkService
 from app.modules.favorites.schemas import FavoriteCreate
 from app.modules.favorites.service import FavoriteService
-from app.modules.reading_progress.schemas import ReadingProgressCreate
+from app.modules.reading_progress.schemas import ReadingProgressCreate, ReaderOverviewResponse
 from app.modules.reading_progress.service import ReadingProgressService
 
 router = APIRouter(
@@ -16,6 +16,17 @@ router = APIRouter(
     tags=["Reader"],
     dependencies=[Depends(require_role(UserRole.READER))],
 )
+
+
+@router.get("/overview", response_model=ReaderOverviewResponse)
+async def get_reader_overview(
+    current_user: CurrentUser,
+    db: DBSession = None,
+):
+    service = ReadingProgressService(db)
+    return await service.get_reader_overview(user_id=UUID(str(current_user.user_id)))
+
+
 
 
 @router.post("/progress")

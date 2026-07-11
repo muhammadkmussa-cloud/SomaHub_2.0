@@ -14,8 +14,9 @@ from sqlalchemy import (
     Index,
     String,
     Text,
+    JSON,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -76,6 +77,10 @@ class User(Base):
         Boolean, default=False, nullable=False
     )
     avatar_url: Mapped[Optional[str]] = mapped_column(Text)
+    display_name: Mapped[Optional[str]] = mapped_column(String(150))
+    timezone: Mapped[str] = mapped_column(String(60), default="UTC", server_default="UTC", nullable=False)
+    theme: Mapped[str] = mapped_column(String(20), default="system", server_default="system", nullable=False)
+    notification_prefs: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, nullable=False
     )

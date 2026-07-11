@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Edit, Trash } from 'lucide-react';
+import { ShoppingBag, Edit, Trash, BookOpen } from 'lucide-react';
 import { ebooksApi, resolveUploadUrl } from '../../lib/ebooks';
 import type { Ebook } from '../../lib/ebooks';
 import { Badge, Button, Card } from '../../components/ui';
@@ -13,7 +13,12 @@ export default function BookstorePage() {
   const { user } = useAuthStore();
   const isSuperAdmin = user?.role === 'super_admin';
 
-  const ebooksQuery = useQuery({ queryKey: ['ebooks'], queryFn: ebooksApi.list });
+  const ebooksQuery = useQuery({ queryKey: ['ebooks'], queryFn: () => ebooksApi.list() });
+  const newArrivalsQuery = useQuery({
+    queryKey: ['ebooks-new-arrivals'],
+    queryFn: () => ebooksApi.list({ limit: 6 }),
+    enabled: !isSuperAdmin,
+  });
   const libraryQuery = useQuery({ queryKey: ['my-library'], queryFn: ebooksApi.myLibrary, enabled: !isSuperAdmin });
 
   // Form State
@@ -268,6 +273,44 @@ export default function BookstorePage() {
         )}
 
         <div className={isSuperAdmin ? "lg:col-span-2 space-y-4" : "space-y-6"}>
+          {!isSuperAdmin && newArrivalsQuery.data && newArrivalsQuery.data.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-obsidian-400">New Arrivals</h2>
+              <div className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 snap-x scroll-smooth">
+                {newArrivalsQuery.data.map((ebook) => (
+                  <Link
+                    key={ebook.id}
+                    to={`/dashboard/bookstore/${ebook.id}`}
+                    className="w-40 shrink-0 flex flex-col gap-2 p-3 bg-white rounded-xl border border-obsidian-100 hover:border-emerald-400 hover:shadow-md transition-all duration-300 snap-start"
+                  >
+                    <div className="aspect-[3/4] rounded-lg overflow-hidden border border-obsidian-50 bg-obsidian-50 shadow-sm relative shrink-0">
+                      {ebook.cover_url ? (
+                        <img
+                          src={resolveUploadUrl(ebook.cover_url) ?? ''}
+                          alt={ebook.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-obsidian-300">
+                          <BookOpen size={24} />
+                        </div>
+                      )}
+                      <div className="absolute top-1.5 right-1.5">
+                        <Badge variant={ebook.price === 0 ? 'emerald' : 'sapphire'}>
+                          {ebook.price === 0 ? 'Free' : `$${ebook.price}`}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-semibold text-sm text-obsidian-900 truncate leading-snug">{ebook.title}</h4>
+                      <p className="text-xs text-obsidian-500 truncate mt-0.5">{ebook.author}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {ebooks.map((ebook) => (
               <Card key={ebook.id} className="flex flex-col justify-between gap-3 h-full">
@@ -335,16 +378,23 @@ export default function BookstorePage() {
                       </Button>
                     </div>
                   ) : ownedIds.has(ebook.id) ? (
-                    <Badge variant="emerald" className="w-full text-center py-1">In your library</Badge>
+                    <div className="space-y-2">
+                      <Badge variant="emerald" className="w-full text-center py-1.5 justify-center">In library</Badge>
+                      <Link to={`/dashboard/my-library/read/${ebook.id}`} className="block w-full">
+                        <Button size="sm" variant="secondary" className="w-full" leftIcon={<BookOpen size={16} />}>
+                          Read Now
+                        </Button>
+                      </Link>
+                    </div>
                   ) : ebook.price === 0 ? (
                     <Button
                       size="sm"
                       className="w-full"
-                      loading={checkout.isPending}
+                      loading={checkout.isPending && checkout.variables === ebook.id}
                       leftIcon={<ShoppingBag size={16} />}
                       onClick={() => checkout.mutate(ebook.id)}
                     >
-                      Add to library
+                      Get Free Ebook
                     </Button>
                   ) : (
                     <p className="text-xs text-obsidian-400">Paid checkout via billing (Stripe/Paystack)</p>

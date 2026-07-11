@@ -10,10 +10,6 @@ export function ChatbotContainer() {
   const [isMinimized, setIsMinimized] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  if (location.pathname.includes('/read/')) {
-    return null;
-  }
-
   const toggleOpen = () => {
     setIsOpen((v) => !v);
     setIsMinimized(false);
@@ -37,6 +33,10 @@ export function ChatbotContainer() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  if (location.pathname.includes('/read/')) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-4 right-4 z-[9999] flex flex-col items-end gap-3">

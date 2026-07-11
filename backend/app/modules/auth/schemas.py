@@ -89,6 +89,10 @@ class UserResponse(BaseModel):
     is_active: bool
     is_email_verified: bool
     avatar_url: Optional[str] = None
+    display_name: Optional[str] = None
+    timezone: str
+    theme: str
+    notification_prefs: dict
     created_at: datetime
 
     model_config = {"from_attributes": True}

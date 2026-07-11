@@ -111,9 +111,10 @@ export default function App() {
                   <Route path="/dashboard/my-library/read/:ebookId" element={<BookReaderPage />} />
                 </Route>
 
+                <Route path="/dashboard/settings" element={<SettingsPage />} />
+
                 <Route element={<ProtectedRoute allowedRoles={ADMIN_ROLES} />}>
                   <Route path="/dashboard/analytics" element={<AnalyticsPage />} />
-                  <Route path="/dashboard/settings" element={<SettingsPage />} />
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>

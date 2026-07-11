@@ -31,6 +31,7 @@ def create_access_token(
     subject: str | Any,
     role: str,
     tenant_id: str | None = None,
+    session_id: str | None = None,
     expires_delta: timedelta | None = None,
 ) -> str:
     """Create a JWT access token."""
@@ -50,6 +51,8 @@ def create_access_token(
     }
     if tenant_id:
         payload["tenant_id"] = str(tenant_id)
+    if session_id:
+        payload["session_id"] = str(session_id)
 
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -58,6 +61,7 @@ def create_refresh_token(
     subject: str | Any,
     role: str,
     tenant_id: str | None = None,
+    session_id: str | None = None,
     expires_delta: timedelta | None = None,
 ) -> str:
     """Create a JWT refresh token."""
@@ -76,6 +80,8 @@ def create_refresh_token(
     }
     if tenant_id:
         payload["tenant_id"] = str(tenant_id)
+    if session_id:
+        payload["session_id"] = str(session_id)
 
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 

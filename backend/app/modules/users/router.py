@@ -1,6 +1,6 @@
 from typing import List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from app.core.dependencies import DBSession, CurrentUser
 from app.core.permissions import UserRole, require_minimum_role
 from app.modules.users.schemas import UserProfileUpdate, UserResponse, UserRoleUpdate
@@ -91,3 +91,95 @@ async def update_user_role(
     updated_user = await service.update_role(user_id, data)
     await db.commit()
     return updated_user
+
+
+# ── Avatar Upload ─────────────────────────────────────────────────────────────
+@router.post("/me/avatar", response_model=UserResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: CurrentUser = None,
+    db: DBSession = None,
+):
+    """Upload an avatar image and update the current user's profile."""
+    from app.core.storage import upload_file
+    url = await upload_file(file, "avatars")
+    service = UserService(db)
+    user = await service.get_user(UUID(current_user.user_id))
+    user = await service.repo.update(user, avatar_url=url)
+    await db.commit()
+    return user
+
+
+# ── Password Change ───────────────────────────────────────────────────────────
+from app.modules.users.schemas import ChangePasswordRequest
+from app.modules.auth.schemas import SuccessResponse
+
+@router.post("/me/change-password", response_model=SuccessResponse)
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: CurrentUser,
+    db: DBSession = None,
+):
+    """Change the password of the currently logged-in user and revoke other sessions."""
+    service = UserService(db)
+    await service.change_password(
+        UUID(current_user.user_id),
+        data.current_password,
+        data.new_password,
+        session_id=current_user.session_id,
+    )
+    await db.commit()
+    return SuccessResponse(message="Password updated successfully. Other sessions logged out.")
+
+
+# ── Preferences Update ────────────────────────────────────────────────────────
+from app.modules.users.schemas import PreferencesUpdate
+
+@router.patch("/me/preferences", response_model=UserResponse)
+async def update_preferences(
+    data: PreferencesUpdate,
+    current_user: CurrentUser,
+    db: DBSession = None,
+):
+    """Update user preferences (timezone, theme, notifications)."""
+    service = UserService(db)
+    user = await service.update_preferences(
+        UUID(current_user.user_id),
+        timezone=data.timezone,
+        theme=data.theme,
+        notification_prefs=data.notification_prefs,
+    )
+    await db.commit()
+    return user
+
+
+# ── Session Management ────────────────────────────────────────────────────────
+@router.get("/me/sessions")
+async def get_active_sessions(current_user: CurrentUser):
+    """Retrieve all active sessions for the current user."""
+    from app.core.redis import list_sessions
+    sessions = await list_sessions(current_user.user_id)
+    for session in sessions:
+        session["is_current"] = (session.get("session_id") == current_user.session_id)
+    return sessions
+
+
+@router.delete("/me/sessions/{session_id}", response_model=SuccessResponse)
+async def revoke_session_by_id(
+    session_id: str,
+    current_user: CurrentUser,
+):
+    """Revoke a specific session for the user."""
+    from app.core.redis import revoke_session
+    await revoke_session(current_user.user_id, session_id)
+    return SuccessResponse(message="Session revoked successfully.")
+
+
+@router.delete("/me/sessions", response_model=SuccessResponse)
+async def revoke_other_sessions(
+    current_user: CurrentUser,
+):
+    """Revoke all sessions for the user except the current one."""
+    from app.core.redis import revoke_all_sessions
+    await revoke_all_sessions(current_user.user_id, except_session_id=current_user.session_id)
+    return SuccessResponse(message="All other sessions revoked successfully.")

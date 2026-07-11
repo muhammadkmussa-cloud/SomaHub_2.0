@@ -79,7 +79,9 @@ class AuthService:
             logger.warning("Email send failed (console fallback used): %s", e)
 
     # ── Login ─────────────────────────────────────────────────────────
-    async def login(self, payload: LoginRequest) -> tuple[TokenResponse, str]:
+    async def login(
+        self, payload: LoginRequest, ip: str = None, user_agent: str = None
+    ) -> tuple[TokenResponse, str]:
         """
         Authenticate user credentials.
         Returns (token_response, refresh_token).
@@ -91,22 +93,34 @@ class AuthService:
         if not user.is_active:
             raise AuthenticationError("Your account has been deactivated.")
 
+        import uuid
+        session_id = str(uuid.uuid4())
+
         # Build tokens
         tenant_id = str(user.tenant_id) if user.tenant_id else None
         access_token = create_access_token(
             subject=str(user.id),
             role=user.role,
             tenant_id=tenant_id,
+            session_id=session_id,
         )
         refresh_token = create_refresh_token(
             subject=str(user.id),
             role=user.role,
             tenant_id=tenant_id,
+            session_id=session_id,
         )
 
-        # Persist refresh token in Redis
+        # Persist refresh token in Redis with metadata
         ttl = int(timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS).total_seconds())
-        await store_refresh_token(str(user.id), refresh_token, ttl)
+        from datetime import datetime, timezone
+        meta = {
+            "ip": ip or "Unknown",
+            "user_agent": user_agent or "Unknown",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        from app.core.redis import store_session
+        await store_session(str(user.id), session_id, refresh_token, meta, ttl)
 
         # Update last login
         await self.user_repo.update_last_login(user.id)
@@ -190,9 +204,15 @@ class AuthService:
             raise InvalidTokenError("Invalid token type.")
 
         user_id = payload["sub"]
+        session_id = payload.get("session_id")
 
         # Verify stored token matches
-        stored = await get_refresh_token(user_id)
+        from app.core.redis import get_session_token
+        if session_id:
+            stored = await get_session_token(user_id, session_id)
+        else:
+            stored = await get_refresh_token(user_id)
+
         if stored != refresh_token:
             raise InvalidTokenError("Refresh token has been revoked.")
 
@@ -201,11 +221,29 @@ class AuthService:
             raise AuthenticationError("User not found or inactive.")
 
         tenant_id = str(user.tenant_id) if user.tenant_id else None
-        new_access = create_access_token(str(user.id), user.role, tenant_id)
-        new_refresh = create_refresh_token(str(user.id), user.role, tenant_id)
+        new_access = create_access_token(str(user.id), user.role, tenant_id, session_id)
+        new_refresh = create_refresh_token(str(user.id), user.role, tenant_id, session_id)
 
         ttl = int(timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS).total_seconds())
-        await store_refresh_token(user_id, new_refresh, ttl)
+        if session_id:
+            from app.core.redis import list_sessions, store_session
+            sessions = await list_sessions(user_id)
+            meta = {}
+            for s in sessions:
+                if s.get("session_id") == session_id:
+                    meta = s
+                    break
+            meta.pop("session_id", None)
+            if not meta:
+                from datetime import datetime, timezone
+                meta = {
+                    "ip": "Unknown",
+                    "user_agent": "Unknown",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+            await store_session(user_id, session_id, new_refresh, meta, ttl)
+        else:
+            await store_refresh_token(user_id, new_refresh, ttl)
 
         return (
             TokenResponse(
@@ -218,8 +256,12 @@ class AuthService:
         )
 
     # ── Logout ────────────────────────────────────────────────────────
-    async def logout(self, user_id: str) -> None:
-        await delete_refresh_token(user_id)
+    async def logout(self, user_id: str, session_id: str = None) -> None:
+        if session_id:
+            from app.core.redis import revoke_session
+            await revoke_session(user_id, session_id)
+        else:
+            await delete_refresh_token(user_id)
 
     # ── Forgot Password ───────────────────────────────────────────────
     async def forgot_password(self, email: str) -> None:

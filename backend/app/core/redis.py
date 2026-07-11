@@ -16,21 +16,45 @@ class InMemoryMockRedis:
     def __init__(self):
         self._store = {}
 
-    async def setex(self, name: str, time: int, value: str):
-        self._store[name] = value
+    def _is_expired(self, name: str) -> bool:
+        import time
+        if name not in self._store:
+            return True
+        val, expiry = self._store[name]
+        if expiry is not None and time.time() > expiry:
+            self._store.pop(name, None)
+            return True
+        return False
+
+    async def setex(self, name: str, time_secs: int, value: str):
+        import time
+        self._store[name] = (value, time.time() + time_secs)
 
     async def get(self, name: str) -> Optional[str]:
-        return self._store.get(name)
+        if self._is_expired(name):
+            return None
+        return self._store[name][0]
 
     async def delete(self, *names: str):
         for name in names:
             self._store.pop(name, None)
 
     async def exists(self, name: str) -> int:
-        return 1 if name in self._store else 0
+        if self._is_expired(name):
+            return 0
+        return 1
 
     async def ping(self) -> bool:
         return True
+
+    async def keys(self, pattern: str) -> list[str]:
+        import fnmatch
+        import time
+        now = time.time()
+        expired = [k for k, (_, exp) in self._store.items() if exp is not None and now > exp]
+        for k in expired:
+            self._store.pop(k, None)
+        return [k for k in self._store.keys() if fnmatch.fnmatch(k, pattern)]
 
     async def aclose(self):
         pass
@@ -47,14 +71,24 @@ class InMemoryMockRedis:
             self.commands.append(("expire", key, seconds))
 
         async def execute(self) -> list:
+            import time
             results = []
+            now = time.time()
             for cmd, *args in self.commands:
                 if cmd == "incr":
                     key = args[0]
-                    current = int(self.client._store.get(key, 0)) + 1
-                    self.client._store[key] = str(current)
+                    if self.client._is_expired(key):
+                        current = 1
+                    else:
+                        current = int(self.client._store[key][0]) + 1
+                    self.client._store[key] = (str(current), None)
                     results.append(current)
                 elif cmd == "expire":
+                    key = args[0]
+                    seconds = args[1]
+                    if key in self.client._store:
+                        val, _ = self.client._store[key]
+                        self.client._store[key] = (val, now + seconds)
                     results.append(True)
             self.commands = []
             return results
@@ -184,3 +218,51 @@ async def check_db_connection() -> bool:
         return await r.ping()
     except Exception:
         return False
+
+
+# ── Session helpers ───────────────────────────────────────────────────────────
+async def store_session(user_id: str, session_id: str, token: str, meta: dict, ttl_seconds: int) -> None:
+    r = get_redis_client()
+    await r.setex(f"refresh:{user_id}:{session_id}", ttl_seconds, token)
+    import json
+    await r.setex(f"refresh_meta:{user_id}:{session_id}", ttl_seconds, json.dumps(meta))
+
+
+async def get_session_token(user_id: str, session_id: str) -> Optional[str]:
+    r = get_redis_client()
+    return await r.get(f"refresh:{user_id}:{session_id}")
+
+
+async def list_sessions(user_id: str) -> list[dict]:
+    r = get_redis_client()
+    import json
+    pattern = f"refresh_meta:{user_id}:*"
+    keys = await r.keys(pattern)
+    sessions = []
+    for key in keys:
+        session_id = key.split(":")[-1]
+        val = await r.get(key)
+        if val:
+            try:
+                meta = json.loads(val)
+                meta["session_id"] = session_id
+                sessions.append(meta)
+            except Exception:
+                pass
+    return sessions
+
+
+async def revoke_session(user_id: str, session_id: str) -> None:
+    r = get_redis_client()
+    await r.delete(f"refresh:{user_id}:{session_id}", f"refresh_meta:{user_id}:{session_id}")
+
+
+async def revoke_all_sessions(user_id: str, except_session_id: Optional[str] = None) -> None:
+    r = get_redis_client()
+    pattern_meta = f"refresh_meta:{user_id}:*"
+    keys_meta = await r.keys(pattern_meta)
+    for key in keys_meta:
+        sid = key.split(":")[-1]
+        if except_session_id and sid == except_session_id:
+            continue
+        await r.delete(f"refresh:{user_id}:{sid}", f"refresh_meta:{user_id}:{sid}")

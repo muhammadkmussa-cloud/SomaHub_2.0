@@ -21,3 +21,25 @@ class ReadingProgressResponse(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class LastReadEbook(BaseModel):
+    ebook_id: uuid.UUID
+    title: str
+    author: str
+    cover_url: str | None = None
+    progress_percent: int
+    last_page: int
+    last_opened_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReaderOverviewResponse(BaseModel):
+    last_read: LastReadEbook | None = None
+    books_completed_this_year: int
+    reading_goal_this_year: int
+    reading_streak_days: int
+
+    model_config = ConfigDict(from_attributes=True)
+

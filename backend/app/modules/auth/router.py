@@ -60,8 +60,10 @@ async def login(
 ):
     """Authenticate a user and return JWT access token."""
     await enforce_rate_limit(request, "auth:login")
+    ip = request.client.host if request.client else "Unknown"
+    user_agent = request.headers.get("user-agent", "Unknown")
     service = AuthService(session)
-    token_response, refresh_token = await service.login(payload)
+    token_response, refresh_token = await service.login(payload, ip=ip, user_agent=user_agent)
     _set_refresh_cookie(response, refresh_token)
     return token_response
 
@@ -150,7 +152,7 @@ async def logout(
 ):
     """Logout the current user and revoke their refresh token."""
     service = AuthService(session)
-    await service.logout(current_user.user_id)
+    await service.logout(current_user.user_id, session_id=current_user.session_id)
 
     auth_header = request.headers.get("authorization", "")
     if auth_header.lower().startswith("bearer "):

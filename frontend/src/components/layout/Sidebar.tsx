@@ -28,7 +28,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Overview',    to: '/dashboard',             icon: <Home size={18} />,       roles: ['super_admin', 'library_admin', 'librarian', 'reader'] },
+  { label: 'Overview',    to: '/dashboard',             icon: <Home size={18} />,       roles: ['super_admin', 'library_admin', 'librarian'] },
   { label: 'Books',       to: '/dashboard/books',       icon: <BookOpen size={18} />,   roles: ['library_admin', 'librarian'] },
   { label: 'Borrowers',   to: '/dashboard/borrowers',   icon: <Users size={18} />,      roles: ['library_admin', 'librarian'] },
   { label: 'Loans',       to: '/dashboard/loans',       icon: <BookMarked size={18} />, roles: ['library_admin', 'librarian'] },
@@ -38,7 +38,7 @@ const navItems: NavItem[] = [
   { label: 'Analytics',   to: '/dashboard/analytics',   icon: <BarChart2 size={18} />,  roles: ['library_admin', 'super_admin'] },
   { label: 'Tenants',     to: '/dashboard/tenants',     icon: <Building2 size={18} />,  roles: ['super_admin'] },
   { label: 'Admin',       to: '/dashboard/admin',       icon: <Shield size={18} />,     roles: ['super_admin'] },
-  { label: 'Settings',    to: '/dashboard/settings',    icon: <Settings size={18} />,   roles: ['library_admin', 'super_admin'] },
+  { label: 'Settings',    to: '/dashboard/settings',    icon: <Settings size={18} />,   roles: ['library_admin', 'super_admin', 'reader', 'librarian'] },
 ];
 
 export function Sidebar() {

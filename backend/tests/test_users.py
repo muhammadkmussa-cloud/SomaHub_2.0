@@ -61,3 +61,45 @@ async def test_update_user_role(async_client, admin_headers, test_librarian):
     )
     assert response.status_code == 200
     assert response.json()["role"] == "librarian"
+
+
+@pytest.mark.asyncio
+async def test_update_preferences(async_client, auth_headers):
+    """PATCH /api/v1/users/me/preferences → 200 and returns updated user preferences."""
+    response = await async_client.patch(
+        "/api/v1/users/me/preferences",
+        json={
+            "timezone": "America/New_York",
+            "theme": "dark",
+            "notification_prefs": {"email_notifs": False, "security_alerts": True}
+        },
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["timezone"] == "America/New_York"
+    assert data["theme"] == "dark"
+    assert data["notification_prefs"]["email_notifs"] is False
+
+
+@pytest.mark.asyncio
+async def test_get_sessions(async_client, auth_headers):
+    """GET /api/v1/users/me/sessions → 200 and lists active sessions."""
+    response = await async_client.get("/api/v1/users/me/sessions", headers=auth_headers)
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+@pytest.mark.asyncio
+async def test_change_password(async_client, auth_headers):
+    """POST /api/v1/users/me/change-password → 200 and works."""
+    response = await async_client.post(
+        "/api/v1/users/me/change-password",
+        json={
+            "current_password": "password123",
+            "new_password": "newpassword123"
+        },
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    assert "message" in response.json()

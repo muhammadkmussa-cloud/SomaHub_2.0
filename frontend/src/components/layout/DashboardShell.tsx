@@ -1,15 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
 import { Bell, Search } from 'lucide-react';
 import { useAuthStore, getRoleLabel } from '../../stores/authStore';
 import { notificationsApi } from '../../lib/notifications';
+import { usersApi } from '../../lib/libraries';
 
 export function DashboardShell() {
   const { user } = useAuthStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const queryClient = useQueryClient();
+
+  const userMeQuery = useQuery({
+    queryKey: ['user-me'],
+    queryFn: usersApi.me,
+    enabled: !!user,
+  });
+  const me = userMeQuery.data;
+
+  useEffect(() => {
+    if (me?.theme) {
+      const isDark = me.theme === 'dark' || (me.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', isDark);
+    }
+  }, [me?.theme]);
 
   const notificationsQuery = useQuery({
     queryKey: ['notifications'],
@@ -85,11 +100,22 @@ export function DashboardShell() {
 
             {user && (
               <div className="flex items-center gap-2 pl-3 border-l border-obsidian-200">
-                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-semibold">
-                  {user.userId.slice(0, 1).toUpperCase()}
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-xs font-semibold text-obsidian-800 leading-none">
+                {me?.avatar_url ? (
+                  <img
+                    src={me.avatar_url}
+                    alt={me.display_name || me.username}
+                    className="w-8 h-8 rounded-full object-cover border border-obsidian-200 shadow-sm"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm">
+                    {((me?.display_name || me?.username || user.userId).slice(0, 1)).toUpperCase()}
+                  </div>
+                )}
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-semibold text-obsidian-800 leading-none">
+                    {me?.display_name || me?.username || 'User'}
+                  </p>
+                  <p className="text-[10px] text-obsidian-500 mt-1 leading-none">
                     {getRoleLabel(user.role)}
                   </p>
                 </div>

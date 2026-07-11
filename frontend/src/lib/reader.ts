@@ -2,6 +2,8 @@ import api from './api';
 import type { Ebook } from './ebooks';
 
 export const readerApi = {
+  getOverview: async () =>
+    (await api.get('/reader/overview')).data as ReaderOverview,
   getProgress: async (ebookId: string) =>
     (await api.get(`/reading-progress/${ebookId}`)).data,
   saveProgress: async (ebookId: string, progress: number) =>
@@ -23,4 +25,22 @@ export const readerApi = {
     (await api.get(`/ebook-purchases/check/${ebookId}`)).data as { owned: boolean },
 };
 
+export interface LastReadEbook {
+  ebook_id: string;
+  title: string;
+  author: string;
+  cover_url: string | null;
+  progress_percent: number;
+  last_page: number;
+  last_opened_at: string;
+}
+
+export interface ReaderOverview {
+  last_read: LastReadEbook | null;
+  books_completed_this_year: number;
+  reading_goal_this_year: number;
+  reading_streak_days: number;
+}
+
 export type { Ebook };
+

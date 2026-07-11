@@ -57,12 +57,12 @@ async def seed(with_demo: bool = False) -> None:
             await session.flush()
             print(f"Created superadmin: {DEV_SUPERADMIN_EMAIL} / {DEV_SUPERADMIN_PASSWORD}")
 
-        # ── Optional Demo Tenant ───────────────────────────────────────
         if with_demo:
-            from app.modules.tenants.repository import TenantRepository
-            tenant_repo = TenantRepository(session)
+            from app.modules.tenants.repository import TenantCRUDRepository
+            tenant_repo = TenantCRUDRepository(session)
             demo_tenant = await tenant_repo.get_by_slug("demo-library")
             if demo_tenant:
+                tenant = demo_tenant
                 print("Demo tenant already exists.")
             else:
                 tenant = Tenant(
@@ -77,7 +77,13 @@ async def seed(with_demo: bool = False) -> None:
                 )
                 session.add(tenant)
                 await session.flush()
+                print("Created demo tenant.")
 
+            from app.modules.auth.repository import UserRepository
+            user_repo = UserRepository(session)
+
+            existing_librarian = await user_repo.get_by_email("librarian@demo.com")
+            if not existing_librarian:
                 librarian = User(
                     id=uuid4(),
                     tenant_id=tenant.id,
@@ -89,7 +95,15 @@ async def seed(with_demo: bool = False) -> None:
                     is_email_verified=True,
                 )
                 session.add(librarian)
+                print("Created librarian@demo.com")
+            else:
+                existing_librarian.tenant_id = tenant.id
+                existing_librarian.role = "librarian"
+                existing_librarian.hashed_password = hash_password("Library123!")
+                print("Updated existing librarian@demo.com")
 
+            existing_admin = await user_repo.get_by_email("library@demo.com")
+            if not existing_admin:
                 admin = User(
                     id=uuid4(),
                     tenant_id=tenant.id,
@@ -101,7 +115,15 @@ async def seed(with_demo: bool = False) -> None:
                     is_email_verified=True,
                 )
                 session.add(admin)
+                print("Created library@demo.com")
+            else:
+                existing_admin.tenant_id = tenant.id
+                existing_admin.role = "library_admin"
+                existing_admin.hashed_password = hash_password("Library123!")
+                print("Updated existing library@demo.com")
 
+            existing_reader = await user_repo.get_by_email("reader@demo.com")
+            if not existing_reader:
                 reader = User(
                     id=uuid4(),
                     tenant_id=tenant.id,
@@ -113,8 +135,12 @@ async def seed(with_demo: bool = False) -> None:
                     is_email_verified=True,
                 )
                 session.add(reader)
-
-                print("Created demo tenant with librarian, admin, and reader users.")
+                print("Created reader@demo.com")
+            else:
+                existing_reader.tenant_id = tenant.id
+                existing_reader.role = "reader"
+                existing_reader.hashed_password = hash_password("Reader123!")
+                print("Updated existing reader@demo.com")
 
         await session.commit()
         print("\n✅ Development seed complete!")

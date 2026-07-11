@@ -16,11 +16,14 @@ async def test_chat_no_stream(async_client, auth_headers):
         "context_used": True,
     }
 
-    with patch("app.ai.router.get_rag") as mock_get_rag:
-        mock_rag = MagicMock()
-        mock_rag.query = AsyncMock(return_value=mock_rag_result)
-        mock_get_rag.return_value = mock_rag
+    mock_rag = MagicMock()
+    mock_rag.query = AsyncMock(return_value=mock_rag_result)
 
+    from app.main import app
+    from app.ai.router import get_rag
+    app.dependency_overrides[get_rag] = lambda: mock_rag
+
+    try:
         response = await async_client.post(
             "/api/v1/ai/chat",
             json={"message": "test question", "stream": False},
@@ -31,6 +34,8 @@ async def test_chat_no_stream(async_client, auth_headers):
         assert data["answer"] == "This is a non-stream response."
         assert data["context_used"] is True
         assert len(data["citations"]) == 1
+    finally:
+        del app.dependency_overrides[get_rag]
 
 
 @pytest.mark.asyncio
@@ -42,11 +47,14 @@ async def test_chat_stream(async_client, auth_headers):
         yield '{"type": "token", "data": " World"}\n'
         yield '{"type": "done", "data": true}\n'
 
-    with patch("app.ai.router.get_rag") as mock_get_rag:
-        mock_rag = MagicMock()
-        mock_rag.query = AsyncMock(return_value=mock_generator())
-        mock_get_rag.return_value = mock_rag
+    mock_rag = MagicMock()
+    mock_rag.query = AsyncMock(return_value=mock_generator())
 
+    from app.main import app
+    from app.ai.router import get_rag
+    app.dependency_overrides[get_rag] = lambda: mock_rag
+
+    try:
         response = await async_client.post(
             "/api/v1/ai/chat",
             json={"message": "test question", "stream": True},
@@ -64,6 +72,8 @@ async def test_chat_stream(async_client, auth_headers):
         assert len(lines) == 4
         assert json.loads(lines[1])["data"] == "Hello"
         assert json.loads(lines[2])["data"] == " World"
+    finally:
+        del app.dependency_overrides[get_rag]
 
 
 @pytest.mark.asyncio
@@ -77,10 +87,14 @@ async def test_ollama_client_post_stream_chat():
         '{"done": true}\n',
     ]
 
+    async def mock_aiter_lines():
+        for line in stream_lines:
+            yield line
+
     with patch("httpx.AsyncClient.stream") as mock_stream:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.aiter_lines = AsyncMock(return_value=stream_lines)
+        mock_resp.aiter_lines = mock_aiter_lines
 
         class MockAsyncContextManager:
             async def __aenter__(self):

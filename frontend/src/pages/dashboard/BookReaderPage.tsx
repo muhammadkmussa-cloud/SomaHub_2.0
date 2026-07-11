@@ -23,6 +23,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { ebooksApi } from '../../lib/ebooks';
+import { usersApi } from '../../lib/libraries';
 import { Button, Spinner } from '../../components/ui';
 
 // ── PDF.js worker ─────────────────────────────────────────────────────────────
@@ -120,14 +121,24 @@ function renderInlineMarkdown(text: string): React.ReactNode {
   });
 }
 
-function BookPageContent({ text, zoomLevel }: { text: string; zoomLevel: number }) {
+function BookPageContent({ 
+  text, 
+  zoomLevel, 
+  fontStyle = 'font-serif', 
+  fontSizeMultiplier = 1.125 
+}: { 
+  text: string; 
+  zoomLevel: number; 
+  fontStyle?: string; 
+  fontSizeMultiplier?: number; 
+}) {
   const lines = text.split('\n');
   const nonEmptyLines = lines.filter(l => l.trim());
   const isImageOnly = nonEmptyLines.length === 1 && IMAGE_RE.test(nonEmptyLines[0].trim());
   return (
     <div
-      className={`flex-1 overflow-y-auto leading-relaxed pr-1 ${isImageOnly ? 'flex flex-col items-center justify-center' : ''}`}
-      style={{ fontSize: `${zoomLevel * 1.125}rem`, lineHeight: '1.6' }}
+      className={`flex-1 overflow-y-auto leading-relaxed pr-1 ${fontStyle} ${isImageOnly ? 'flex flex-col items-center justify-center' : ''}`}
+      style={{ fontSize: `${zoomLevel * fontSizeMultiplier}rem`, lineHeight: '1.6' }}
     >
       {lines.map((line, index) => {
         const trimmed = line.trim();
@@ -251,12 +262,27 @@ export default function BookReaderPage() {
     retry: false,
   });
 
+  // ── User preferences query ─────────────────────────────────────────────────
+  const { data: user } = useQuery({
+    queryKey: ['user-me'],
+    queryFn: usersApi.me,
+  });
+
+  const fontStyle = user?.notification_prefs?.reading_font_style === 'sans-serif' ? 'font-sans' : 'font-serif';
+  
+  let fontSizeMultiplier = 1.125;
+  const userFontSize = user?.notification_prefs?.reading_font_size;
+  if (userFontSize === 'small') {
+    fontSizeMultiplier = 0.95;
+  } else if (userFontSize === 'large') {
+    fontSizeMultiplier = 1.35;
+  }
+
   const pdfUrl = resolveUploadUrl(ebook?.file_url);
   const hasPdf = !!pdfUrl;
 
   // ── View mode (pdf = real PDF | book = serif text mode) ────────────────────
   const [viewMode, setViewMode] = useState<'pdf' | 'book'>('pdf');
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isImmersive, setIsImmersive] = useState(false);
 
   useEffect(() => {
@@ -267,7 +293,6 @@ export default function BookReaderPage() {
         (document as any).mozFullScreenElement ||
         (document as any).msFullscreenElement
       );
-      setIsFullscreen(isCurrentlyFullscreen);
       if (!isCurrentlyFullscreen) {
         setIsImmersive(false);
       }
@@ -740,14 +765,19 @@ export default function BookReaderPage() {
         {/* ── BOOK / TEXT VIEW MODE ─────────────────────────────────────────── */}
         {viewMode === 'book' && (
           <div className={`mx-auto my-auto w-full ${doublePage ? 'max-w-5xl' : 'max-w-xl'} h-full flex items-center justify-center`}>
-            <div className={`grid grid-cols-1 ${doublePage ? 'md:grid-cols-2' : ''} w-full h-[85vh] max-h-[680px] bg-[#fbf5e6] text-[#2c2214] font-serif rounded-lg shadow-2xl overflow-hidden relative border border-[#eadaab]`}>
+            <div className={`grid grid-cols-1 ${doublePage ? 'md:grid-cols-2' : ''} w-full h-[85vh] max-h-[680px] bg-[#fbf5e6] text-[#2c2214] ${fontStyle} rounded-lg shadow-2xl overflow-hidden relative border border-[#eadaab]`}>
               {/* Left page */}
               <div className={`flex flex-col justify-between p-6 sm:p-10 ${doublePage ? 'md:border-r border-[#e0cf9b]' : ''} h-full relative`}>
                 <div className="flex justify-between text-[11px] text-[#8c7b50] italic border-b border-[#e2d5ab] pb-1.5 mb-4">
                   <span>{doublePage ? (safeCurrentPage - 1) * 2 + 1 : safeCurrentPage}</span>
                   <span>{ebook.title}</span>
                 </div>
-                <BookPageContent text={leftTextPage || 'End of Book'} zoomLevel={zoomLevel} />
+                <BookPageContent 
+                  text={leftTextPage || 'End of Book'} 
+                  zoomLevel={zoomLevel} 
+                  fontStyle={fontStyle}
+                  fontSizeMultiplier={fontSizeMultiplier}
+                />
                 <div className="text-center text-xs text-[#8c7b50] font-semibold mt-4">
                   {doublePage ? (safeCurrentPage - 1) * 2 + 1 : safeCurrentPage}
                 </div>
@@ -760,7 +790,12 @@ export default function BookReaderPage() {
                      <span>CONTINUED</span>
                      <span>{(safeCurrentPage - 1) * 2 + 2}</span>
                   </div>
-                  <BookPageContent text={rightTextPage || ''} zoomLevel={zoomLevel} />
+                  <BookPageContent 
+                    text={rightTextPage || ''} 
+                    zoomLevel={zoomLevel} 
+                    fontStyle={fontStyle}
+                    fontSizeMultiplier={fontSizeMultiplier}
+                  />
                   <div className="text-center text-xs text-[#8c7b50] font-semibold mt-4">
                     {(safeCurrentPage - 1) * 2 + 2}
                   </div>
