@@ -1,5 +1,9 @@
 SomaHub Enterprise
 
+https://github.com/user-attachments/assets/7ab7574a-0ad4-4dbe-90cc-856e49cd7cab
+
+![SomaHub Enterprise project film](./somahub-film-poster.webp)
+
 Modern Library Management & Digital Reading Platform
 
 SomaHub is a multi-tenant library management and digital reading system designed for schools, colleges, universities, and educational institutions. It combines physical inventory management, OCR-assisted cataloging, digital bookstore, secure ebook reading, analytics, and subscription management — all in one platform.
@@ -176,3 +180,4 @@ docker-compose -f docker-compose.prod.yml up -d --build
 📜 License
 
 MIT License. See LICENSE file for details.
+
