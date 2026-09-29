@@ -2,7 +2,7 @@ SomaHub Enterprise
 
 https://github.com/user-attachments/assets/7ab7574a-0ad4-4dbe-90cc-856e49cd7cab
 
-[![SomaHub Enterprise project film](./somahub-film-poster.webp)](https://github.com/user-attachments/assets/7ab7574a-0ad4-4dbe-90cc-856e49cd7cab)
+![SomaHub Enterprise project film](./somahub-film-poster.webp)
 
 Modern Library Management & Digital Reading Platform
 
